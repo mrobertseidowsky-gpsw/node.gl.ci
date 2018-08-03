@@ -191,11 +191,13 @@ static int rtt_prefetch(struct ngl_node *node)
     struct glcontext *gl = ctx->glcontext;
     struct rtt_priv *s = node->priv_data;
 
+#ifndef VULKAN_BACKEND
     if (!(gl->features & NGLI_FEATURE_FRAMEBUFFER_OBJECT) && s->samples > 0) {
         LOG(WARNING, "context does not support the framebuffer object feature, "
             "multisample anti-aliasing will be disabled");
         s->samples = 0;
     }
+#endif
 
     if (!s->nb_color_textures) {
         LOG(ERROR, "at least one color texture must be specified");
@@ -342,6 +344,7 @@ static void rtt_draw(struct ngl_node *node)
 
     struct rendertarget *rt = s->samples > 0 ? &s->rt_ms : &s->rt;
     struct rendertarget *prev_rt = ngli_gctx_get_rendertarget(ctx);
+    LOG(ERROR, "coucou");
     ngli_gctx_set_rendertarget(ctx, rt);
 
     int prev_vp[4] = {0};
@@ -349,6 +352,7 @@ static void rtt_draw(struct ngl_node *node)
 
     const int vp[4] = {0, 0, s->width, s->height};
     ngli_gctx_set_viewport(ctx, vp);
+    LOG(ERROR, "%d %d", ctx->viewport[2], ctx->viewport[3]);
 
     float prev_clear_color[4] = {0};
     if (s->use_clear_color) {

@@ -50,7 +50,11 @@ static int register_uniform(struct pass *s, const char *name, struct ngl_node *u
         return 0;
 
     struct hmap *infos = s->pipeline_program->uniforms;
-    if (!ngli_hmap_get(infos, name)) {
+    if (!infos)
+        return 0;
+
+    struct program_variable_info *info = ngli_hmap_get(infos, name);
+    if (!info) {
         struct pass_params *params = &s->params;
         LOG(WARNING, "uniform %s attached to pipeline %s not found in shader", name, params->label);
         return 0;
@@ -95,7 +99,10 @@ static int register_uniforms(struct pass *s)
     for (int i = 0; i < NGLI_ARRAY_NB(pipeline_uniforms); i++) {
         struct pipeline_uniform *pipeline_uniform = &pipeline_uniforms[i];
         struct hmap *infos = s->pipeline_program->uniforms;
-        if (!ngli_hmap_get(infos, pipeline_uniform->name))
+        if (!infos)
+            return 0;
+        struct program_variable_info *info = ngli_hmap_get(infos, pipeline_uniform->name);
+        if (!info)
             continue;
         if (!ngli_darray_push(&s->pipeline_uniforms, pipeline_uniform))
             return NGL_ERROR_MEMORY;
@@ -235,7 +242,7 @@ static int register_texture(struct pass *s, const char *name, struct ngl_node *t
         } else {
             struct pipeline_uniform pipeline_uniform = {
                 .type  = uniform->type,
-                .count = 1
+                .count = 1,
             };
             snprintf(pipeline_uniform.name, sizeof(pipeline_uniform.name), "%s", uniform_name);
             if (!ngli_darray_push(&s->pipeline_uniforms, &pipeline_uniform))

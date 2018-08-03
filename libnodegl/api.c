@@ -37,7 +37,9 @@
 #include "nodegl.h"
 #include "nodes.h"
 
-#if defined(TARGET_IPHONE) || defined(TARGET_ANDROID)
+#if defined(VULKAN_BACKEND)
+# define DEFAULT_BACKEND NGL_BACKEND_VULKAN
+#elif defined(TARGET_IPHONE) || defined(TARGET_ANDROID)
 # define DEFAULT_BACKEND NGL_BACKEND_OPENGLES
 #else
 # define DEFAULT_BACKEND NGL_BACKEND_OPENGL
@@ -45,10 +47,15 @@
 
 extern const struct backend ngli_backend_gl;
 extern const struct backend ngli_backend_gles;
+extern const struct backend ngli_backend_vk;
 
 static const struct backend *backend_map[] = {
+#ifdef VULKAN_BACKEND
+    [NGL_BACKEND_VULKAN]   = &ngli_backend_vk,
+#else
     [NGL_BACKEND_OPENGL]   = &ngli_backend_gl,
     [NGL_BACKEND_OPENGLES] = &ngli_backend_gles,
+#endif
 };
 
 static int get_default_platform(void)
@@ -147,6 +154,7 @@ static int cmd_resize(struct ngl_ctx *s, void *arg)
 static int cmd_set_scene(struct ngl_ctx *s, void *arg)
 {
     if (s->scene) {
+        s->backend->wait_idle(s);
         ngli_node_detach_ctx(s->scene, s);
         ngl_node_unrefp(&s->scene);
     }

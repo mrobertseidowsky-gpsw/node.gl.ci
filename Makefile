@@ -68,7 +68,7 @@ pynodegl-deps-install: $(PREFIX) nodegl-install
 	(. $(ACTIVATE) && pip install -r ./pynodegl/requirements.txt)
 
 nodegl-install: sxplayer-install
-	PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig LDFLAGS="$(RPATH_LDFLAGS) $(LIBNODEGL_EXTRA_LDFLAGS)" $(MAKE) -C libnodegl install PREFIX=$(PREFIX) DEBUG=$(DEBUG) SHARED=yes INSTALL="$(INSTALL)"
+	PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig LDFLAGS="$(RPATH_LDFLAGS) $(LIBNODEGL_EXTRA_LDFLAGS)" $(MAKE) -C libnodegl install PREFIX=$(PREFIX) DEBUG=$(DEBUG) SHARED=yes INSTALL="$(INSTALL)" BACKEND=vk
 
 sxplayer-install: sxplayer $(PREFIX)
 	PKG_CONFIG_PATH=$(PREFIX)/lib/pkgconfig LDFLAGS="$(RPATH_LDFLAGS) $(LIBSXPLAYER_EXTRA_LDFLAGS)" $(MAKE) -C sxplayer install PREFIX=$(PREFIX) DEBUG=$(DEBUG) SHARED=yes INSTALL="$(INSTALL)"

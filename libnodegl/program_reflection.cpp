@@ -19,6 +19,7 @@
  * under the License.
  */
 
+#include <GL/glcorearb.h>
 #include <glslang/Include/ResourceLimits.h>
 #include <glslang/Include/Types.h>
 #include <glslang/Public/ShaderLang.h>
@@ -33,6 +34,7 @@ extern "C" {
 #include "program.h"
 #include "type.h"
 #include "time.h"
+#include "glincludes.h"
 }
 
 class GLslangInitializer {
@@ -160,6 +162,7 @@ static int add_shader(glslang::TProgram & program, EShLanguage stage, const char
 {
     glslang::TShader *shader = new glslang::TShader(stage);
     shader->setStrings(&text, 1);
+    shader->setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
 
     EShMessages messages = EShMsgDefault;
     if (!shader->parse(&default_ressources, 100, false, messages)) {
@@ -196,6 +199,8 @@ static const struct {
     {GL_SAMPLER_EXTERNAL_OES,        NGLI_TYPE_SAMPLER_EXTERNAL_OES},
     {GL_SAMPLER_EXTERNAL_2D_Y2Y_EXT, NGLI_TYPE_SAMPLER_EXTERNAL_2D_Y2Y_EXT},
     {GL_IMAGE_2D,                    NGLI_TYPE_IMAGE_2D},
+    {GL_UNIFORM_BUFFER,              NGLI_TYPE_UNIFORM_BUFFER},
+    {GL_SHADER_STORAGE_BUFFER,       NGLI_TYPE_STORAGE_BUFFER},
 };
 
 static int get_type(GLenum gl_type)
@@ -203,15 +208,17 @@ static int get_type(GLenum gl_type)
     for (int i = 0; i < NGLI_ARRAY_NB(types_map); i++)
         if (types_map[i].gl_type == gl_type)
             return types_map[i].type;
-    LOG(ERROR, "not found gl type %x", gl_type);
     return NGLI_TYPE_NONE;
 }
 
 static void copy_reflection_object(struct program_variable_info *dst, const glslang::TObjectReflection *src)
 {
-    dst->type    = get_type(src->glDefineType);
-    dst->size    = src->size;
-    dst->binding = src->getBinding();
+    dst->type     = get_type(src->glDefineType);
+    dst->size     = src->size;
+    dst->location = -1;
+    dst->binding  = src->getBinding();
+    dst->offset   = src->offset;
+    dst->index    = src->index;
 
     /* stages */
     dst->stages = 0;
@@ -225,7 +232,22 @@ static void copy_reflection_object(struct program_variable_info *dst, const glsl
     /* access */
     const glslang::TType *type = src->getType();
     if (type) {
+        LOG(ERROR, ">>>%s", type->getCompleteString().c_str());
+        if (type->isStruct()) {
+        const glslang::TTypeList* list = type->getStruct();
+        for (int i = 0; i < list->size(); i++) {
+            const glslang::TTypeLoc loc = (*list)[i];
+            LOG(ERROR, "%s", loc.type->getFieldName().c_str());
+            LOG(ERROR, "%s", loc.type->getCompleteString().c_str());
+        }
+        }
+
         const glslang::TQualifier & qualifier = type->getQualifier();
+        if (qualifier.hasLayout()) {
+            if (qualifier.hasAnyLocation()) {
+                dst->location = qualifier.layoutLocation;
+            }
+        }
         if (qualifier.readonly)
             dst->access = NGLI_ACCESS_READ_BIT;
         else if (qualifier.writeonly)
@@ -311,7 +333,7 @@ int ngli_program_reflection_init(struct program_reflection *s,
         ret = ngli_hmap_set(s->blocks, src.name.c_str(), dst);
         if (ret < 0)
             goto done;
-
+        dst->type = NGLI_TYPE_UNIFORM_BUFFER;
     }
 
     count = program.getNumBufferBlocks();
@@ -325,6 +347,22 @@ int ngli_program_reflection_init(struct program_reflection *s,
         ret = ngli_hmap_set(s->blocks, src.name.c_str(), dst);
         if (ret < 0)
             goto done;
+        LOG(ERROR, "zouzouzou");
+        dst->type = NGLI_TYPE_STORAGE_BUFFER;
+    }
+
+    count = program.getNumBufferVariables();
+    for (int i = 0; i < count; i++) {
+        const glslang::TObjectReflection &src = program.getBufferBlock(i);
+        struct program_variable_info *dst = (struct program_variable_info *)ngli_malloc(sizeof(*dst));
+        if (!dst) {
+            goto done;
+        }
+        copy_reflection_object(dst, &src);
+        ret = ngli_hmap_set(s->blocks, src.name.c_str(), dst);
+        if (ret < 0)
+            goto done;
+        dst->type = NGLI_TYPE_STORAGE_BUFFER;
     }
 
     count = program.getNumPipeInputs();
@@ -377,8 +415,8 @@ void ngli_program_reflection_dump(struct program_reflection *s)
         const struct hmap_entry *entry = NULL;
         while ((entry = ngli_hmap_next(map, entry)) != NULL) {
           struct program_variable_info *info = (struct program_variable_info *)entry->data;
-          LOG(ERROR, "\tname=%s size=%d type=0x%x binding=%d stages=0x%x access=0x%x",
-              entry->key, info->size, info->type, info->binding, info->stages, info->access);
+          LOG(ERROR, "\tname=%s size=%d offset=%d index=%d type=0x%x location=%d binding=%d stages=0x%x access=0x%x",
+              entry->key, info->size, info->offset, info->index, info->type, info->location, info->binding, info->stages, info->access);
         }
     }
 }
