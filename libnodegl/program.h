@@ -25,7 +25,24 @@
 #include "glincludes.h"
 #include "hmap.h"
 
+<<<<<<< HEAD
 #define MAX_ID_LEN 128
+||||||| parent of e1b7e071... WIP: vulkan
+struct uniformprograminfo {
+    GLint location;
+    GLint size;
+    GLenum type;
+    int binding;
+};
+=======
+#ifndef VULKAN_BACKEND
+struct uniformprograminfo {
+    GLint location;
+    GLint size;
+    GLenum type;
+    int binding;
+};
+>>>>>>> e1b7e071... WIP: vulkan
 
 struct program_variable_info {
     int type;
@@ -42,14 +59,35 @@ enum {
     NGLI_PROGRAM_SHADER_COMP,
     NGLI_PROGRAM_SHADER_NB
 };
+#endif
+
+#ifdef VULKAN_BACKEND
+struct program_shader {
+    VkShaderModule vkmodule;
+    struct spirv_probe *probe;
+    shaderc_compilation_result_t result;
+};
+#endif
+
+enum {
+    NGLI_PROGRAM_SHADER_VERT,
+    NGLI_PROGRAM_SHADER_FRAG,
+    NGLI_PROGRAM_SHADER_COMP,
+    NGLI_PROGRAM_SHADER_NB
+};
 
 struct program {
     struct ngl_ctx *ctx;
+
+#ifdef VULKAN_BACKEND
+    struct program_shader shaders[NGLI_PROGRAM_SHADER_NB];
+#else
     struct hmap *uniforms;
     struct hmap *attributes;
     struct hmap *buffer_blocks;
 
     GLuint id;
+#endif
 };
 
 int ngli_program_init(struct program *s, struct ngl_ctx *ctx, const char *vertex, const char *fragment, const char *compute);

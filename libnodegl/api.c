@@ -152,7 +152,14 @@ static int cmd_configure(struct ngl_ctx *s, void *arg)
 static int cmd_set_scene(struct ngl_ctx *s, void *arg)
 {
     if (s->scene) {
+<<<<<<< HEAD
         ngli_node_detach_ctx(s->scene, s);
+||||||| parent of e1b7e071... WIP: vulkan
+        ngli_node_detach_ctx(s->scene);
+=======
+        s->backend->wait_idle(s);
+        ngli_node_detach_ctx(s->scene);
+>>>>>>> e1b7e071... WIP: vulkan
         ngl_node_unrefp(&s->scene);
     }
 
@@ -347,6 +354,79 @@ fail:
     return NULL;
 }
 
+<<<<<<< HEAD
+||||||| parent of e1b7e071... WIP: vulkan
+#if defined(TARGET_IPHONE) || defined(TARGET_ANDROID)
+# define DEFAULT_BACKEND NGL_BACKEND_OPENGLES
+#else
+# define DEFAULT_BACKEND NGL_BACKEND_OPENGL
+#endif
+
+extern const struct backend ngli_backend_gl;
+extern const struct backend ngli_backend_gles;
+
+static const struct backend *backend_map[] = {
+    [NGL_BACKEND_OPENGL]   = &ngli_backend_gl,
+    [NGL_BACKEND_OPENGLES] = &ngli_backend_gles,
+};
+
+static int get_default_platform(void)
+{
+#if defined(TARGET_LINUX)
+    return NGL_PLATFORM_XLIB;
+#elif defined(TARGET_IPHONE)
+    return NGL_PLATFORM_IOS;
+#elif defined(TARGET_DARWIN)
+    return NGL_PLATFORM_MACOS;
+#elif defined(TARGET_ANDROID)
+    return NGL_PLATFORM_ANDROID;
+#elif defined(TARGET_MINGW_W64)
+    return NGL_PLATFORM_WINDOWS;
+#else
+    return -1;
+#endif
+}
+
+=======
+#if defined(VULKAN_BACKEND)
+# define DEFAULT_BACKEND NGL_BACKEND_VULKAN
+#elif defined(TARGET_IPHONE) || defined(TARGET_ANDROID)
+# define DEFAULT_BACKEND NGL_BACKEND_OPENGLES
+#else
+# define DEFAULT_BACKEND NGL_BACKEND_OPENGL
+#endif
+
+extern const struct backend ngli_backend_vk;
+extern const struct backend ngli_backend_gl;
+extern const struct backend ngli_backend_gles;
+
+static const struct backend *backend_map[] = {
+#ifdef VULKAN_BACKEND
+    [NGL_BACKEND_VULKAN]   = &ngli_backend_vk,
+#else
+    [NGL_BACKEND_OPENGL]   = &ngli_backend_gl,
+    [NGL_BACKEND_OPENGLES] = &ngli_backend_gles,
+#endif
+};
+
+static int get_default_platform(void)
+{
+#if defined(TARGET_LINUX)
+    return NGL_PLATFORM_XLIB;
+#elif defined(TARGET_IPHONE)
+    return NGL_PLATFORM_IOS;
+#elif defined(TARGET_DARWIN)
+    return NGL_PLATFORM_MACOS;
+#elif defined(TARGET_ANDROID)
+    return NGL_PLATFORM_ANDROID;
+#elif defined(TARGET_MINGW_W64)
+    return NGL_PLATFORM_WINDOWS;
+#else
+    return -1;
+#endif
+}
+
+>>>>>>> e1b7e071... WIP: vulkan
 int ngl_configure(struct ngl_ctx *s, struct ngl_config *config)
 {
     if (!config) {

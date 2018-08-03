@@ -125,6 +125,7 @@ static const struct node_param text_params[] = {
     {NULL}
 };
 
+#ifndef VULKAN_BACKEND
 static void set_canvas_dimensions(struct canvas *canvas, const char *s)
 {
     canvas->w = 0;
@@ -213,9 +214,11 @@ static const char * const fragment_data =
 #define C(index) s->box_corner[index]
 #define W(index) s->box_width[index]
 #define H(index) s->box_height[index]
+#endif
 
 static int text_init(struct ngl_node *node)
 {
+#ifndef VULKAN_BACKEND
     struct ngl_ctx *ctx = node->ctx;
     struct text_priv *s = node->priv_data;
 
@@ -329,14 +332,24 @@ static int text_init(struct ngl_node *node)
     if (ret < 0)
         return ret;
 
+<<<<<<< HEAD
     s->modelview_matrix_index = ngli_pipeline_get_uniform_index(&s->pipeline, "modelview_matrix");
     s->projection_matrix_index = ngli_pipeline_get_uniform_index(&s->pipeline, "projection_matrix");
 
     return 0;
+||||||| parent of e1b7e071... WIP: vulkan
+    return ngli_texture_upload(&s->texture, s->canvas.buf, 0);
+=======
+    return ngli_texture_upload(&s->texture, s->canvas.buf, 0);
+#else
+    return 0;
+#endif
+>>>>>>> e1b7e071... WIP: vulkan
 }
 
 static void text_draw(struct ngl_node *node)
 {
+#ifndef VULKAN_BACKEND
     struct ngl_ctx *ctx = node->ctx;
     struct text_priv *s = node->priv_data;
 
@@ -346,11 +359,33 @@ static void text_draw(struct ngl_node *node)
     ngli_pipeline_update_uniform(&s->pipeline, s->modelview_matrix_index, modelview_matrix);
     ngli_pipeline_update_uniform(&s->pipeline, s->projection_matrix_index, projection_matrix);
 
+<<<<<<< HEAD
     ngli_pipeline_exec(&s->pipeline);
+||||||| parent of e1b7e071... WIP: vulkan
+    if (!(gl->features & NGLI_FEATURE_VERTEX_ARRAY_OBJECT)) {
+        ngli_glDisableVertexAttribArray(gl, s->position_location);
+        ngli_glDisableVertexAttribArray(gl, s->uvcoord_location);
+    }
+=======
+    if (!(gl->features & NGLI_FEATURE_VERTEX_ARRAY_OBJECT)) {
+        ngli_glDisableVertexAttribArray(gl, s->position_location);
+        ngli_glDisableVertexAttribArray(gl, s->uvcoord_location);
+    }
+#endif
+>>>>>>> e1b7e071... WIP: vulkan
 }
 
 static void text_uninit(struct ngl_node *node)
 {
+<<<<<<< HEAD
+||||||| parent of e1b7e071... WIP: vulkan
+    struct ngl_ctx *ctx = node->ctx;
+    struct glcontext *gl = ctx->glcontext;
+=======
+#ifndef VULKAN_BACKEND
+    struct ngl_ctx *ctx = node->ctx;
+    struct glcontext *gl = ctx->glcontext;
+>>>>>>> e1b7e071... WIP: vulkan
     struct text_priv *s = node->priv_data;
     ngli_pipeline_reset(&s->pipeline);
     ngli_texture_reset(&s->texture);
@@ -358,6 +393,7 @@ static void text_uninit(struct ngl_node *node)
     ngli_buffer_reset(&s->uvcoords);
     ngli_program_reset(&s->program);
     ngli_free(s->canvas.buf);
+#endif
 }
 
 const struct node_class ngli_text_class = {

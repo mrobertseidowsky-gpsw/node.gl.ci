@@ -70,7 +70,19 @@ static int animatedbuffer_init(struct ngl_node *node)
     struct buffer_priv *s = node->priv_data;
 
     s->dynamic = 1;
+<<<<<<< HEAD
     s->usage = NGLI_BUFFER_USAGE_DYNAMIC;
+||||||| parent of e1b7e071... WIP: vulkan
+    s->usage = GL_DYNAMIC_DRAW;
+=======
+#ifdef VULKAN_BACKEND
+    s->usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT
+             | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+             | VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
+#else
+    s->usage = GL_DYNAMIC_DRAW;
+#endif
+>>>>>>> e1b7e071... WIP: vulkan
     s->data_comp = ngli_format_get_nb_comp(s->data_format);
     s->data_stride = ngli_format_get_bytes_per_pixel(s->data_format);
 

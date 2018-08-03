@@ -131,6 +131,99 @@ static int camera_init(struct ngl_node *node)
     s->center_transform_matrix = ngli_get_last_transformation_matrix(s->center_transform);
     s->up_transform_matrix     = ngli_get_last_transformation_matrix(s->up_transform);
 
+<<<<<<< HEAD
+||||||| parent of e1b7e071... WIP: vulkan
+    if (s->pipe_fd) {
+        s->pipe_buf = ngli_calloc(4 /* RGBA */, s->pipe_width * s->pipe_height);
+        if (!s->pipe_buf)
+            return -1;
+
+        int sample_buffers;
+        ngli_glGetIntegerv(gl, GL_SAMPLE_BUFFERS, &sample_buffers);
+        if (sample_buffers > 0) {
+            ngli_glGetIntegerv(gl, GL_SAMPLES, &s->samples);
+        }
+
+        if (s->samples > 0) {
+            if (!(gl->features & NGLI_FEATURE_FRAMEBUFFER_OBJECT)) {
+                LOG(ERROR, "could not read pixels from anti-aliased framebuffer as framebuffer blitting is not supported");
+                return -1;
+            }
+
+            struct texture_params attachment_params = NGLI_TEXTURE_PARAM_DEFAULTS;
+            attachment_params.format = NGLI_FORMAT_R8G8B8A8_UNORM;
+            attachment_params.width = s->pipe_width;
+            attachment_params.height = s->pipe_height;
+            attachment_params.usage = NGLI_TEXTURE_USAGE_ATTACHMENT_ONLY;
+            int ret = ngli_texture_init(&s->rt_color, gl, &attachment_params);
+            if (ret < 0)
+                return ret;
+
+            const struct texture *attachments[] = {&s->rt_color};
+            const int nb_attachments = NGLI_ARRAY_NB(attachments);
+
+            struct rendertarget_params rt_params = {
+                .width = s->pipe_width,
+                .height = s->pipe_height,
+                .nb_attachments = nb_attachments,
+                .attachments = attachments,
+            };
+            ret = ngli_rendertarget_init(&s->rt, ctx, &rt_params);
+            if (ret < 0)
+                return ret;
+        }
+    }
+
+=======
+    if (s->pipe_fd) {
+        s->pipe_buf = ngli_calloc(4 /* RGBA */, s->pipe_width * s->pipe_height);
+        if (!s->pipe_buf)
+            return -1;
+
+#ifdef VULKAN_BACKEND
+        // TODO
+#else
+        struct ngl_ctx *ctx = node->ctx;
+        struct glcontext *gl = ctx->glcontext;
+
+        int sample_buffers;
+        ngli_glGetIntegerv(gl, GL_SAMPLE_BUFFERS, &sample_buffers);
+        if (sample_buffers > 0) {
+            ngli_glGetIntegerv(gl, GL_SAMPLES, &s->samples);
+        }
+
+        if (s->samples > 0) {
+            if (!(gl->features & NGLI_FEATURE_FRAMEBUFFER_OBJECT)) {
+                LOG(ERROR, "could not read pixels from anti-aliased framebuffer as framebuffer blitting is not supported");
+                return -1;
+            }
+
+            struct texture_params attachment_params = NGLI_TEXTURE_PARAM_DEFAULTS;
+            attachment_params.format = NGLI_FORMAT_R8G8B8A8_UNORM;
+            attachment_params.width = s->pipe_width;
+            attachment_params.height = s->pipe_height;
+            attachment_params.usage = NGLI_TEXTURE_USAGE_ATTACHMENT_ONLY;
+            int ret = ngli_texture_init(&s->rt_color, gl, &attachment_params);
+            if (ret < 0)
+                return ret;
+
+            const struct texture *attachments[] = {&s->rt_color};
+            const int nb_attachments = NGLI_ARRAY_NB(attachments);
+
+            struct rendertarget_params rt_params = {
+                .width = s->pipe_width,
+                .height = s->pipe_height,
+                .nb_attachments = nb_attachments,
+                .attachments = attachments,
+            };
+            ret = ngli_rendertarget_init(&s->rt, ctx, &rt_params);
+            if (ret < 0)
+                return ret;
+        }
+#endif
+    }
+
+>>>>>>> e1b7e071... WIP: vulkan
     return 0;
 }
 
@@ -216,6 +309,105 @@ static void camera_draw(struct ngl_node *node)
 
     ngli_darray_pop(&ctx->modelview_matrix_stack);
     ngli_darray_pop(&ctx->projection_matrix_stack);
+<<<<<<< HEAD
+||||||| parent of e1b7e071... WIP: vulkan
+
+    if (s->pipe_fd) {
+        GLuint framebuffer_read_id;
+        GLuint framebuffer_draw_id;
+
+        if (s->samples > 0) {
+            ngli_glGetIntegerv(gl, GL_READ_FRAMEBUFFER_BINDING, (GLint *)&framebuffer_read_id);
+            ngli_glGetIntegerv(gl, GL_DRAW_FRAMEBUFFER_BINDING, (GLint *)&framebuffer_draw_id);
+
+            ngli_glBindFramebuffer(gl, GL_READ_FRAMEBUFFER, framebuffer_draw_id);
+            ngli_glBindFramebuffer(gl, GL_DRAW_FRAMEBUFFER, s->rt.id);
+            ngli_glBlitFramebuffer(gl, 0, 0, s->pipe_width, s->pipe_height, 0, 0, s->pipe_width, s->pipe_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+            ngli_glBindFramebuffer(gl, GL_READ_FRAMEBUFFER, s->rt.id);
+        }
+
+        TRACE("write %dx%d buffer to FD=%d", s->pipe_width, s->pipe_height, s->pipe_fd);
+        ngli_glReadPixels(gl, 0, 0, s->pipe_width, s->pipe_height, GL_RGBA, GL_UNSIGNED_BYTE, s->pipe_buf);
+
+        const int linesize = s->pipe_width * 4;
+        for (int i = 0; i < s->pipe_height; i++) {
+            const int line = s->pipe_height - i - 1;
+            const uint8_t *linedata = s->pipe_buf + line * linesize;
+            write(s->pipe_fd, linedata, linesize);
+        }
+
+        if (s->samples > 0) {
+            ngli_glBindFramebuffer(gl, GL_READ_FRAMEBUFFER, framebuffer_read_id);
+            ngli_glBindFramebuffer(gl, GL_DRAW_FRAMEBUFFER, framebuffer_draw_id);
+        }
+    }
+}
+
+static void camera_uninit(struct ngl_node *node)
+{
+    struct camera_priv *s = node->priv_data;
+
+    if (s->pipe_fd) {
+        ngli_free(s->pipe_buf);
+        ngli_rendertarget_reset(&s->rt);
+        ngli_texture_reset(&s->rt_color);
+    }
+=======
+
+    if (s->pipe_fd) {
+#ifdef VULKAN_BACKEND
+        // TODO
+        // vkCmdCopyImageToBuffer?
+#else
+        struct glcontext *gl = ctx->glcontext;
+
+        GLuint framebuffer_read_id;
+        GLuint framebuffer_draw_id;
+
+        if (s->samples > 0) {
+            ngli_glGetIntegerv(gl, GL_READ_FRAMEBUFFER_BINDING, (GLint *)&framebuffer_read_id);
+            ngli_glGetIntegerv(gl, GL_DRAW_FRAMEBUFFER_BINDING, (GLint *)&framebuffer_draw_id);
+
+            ngli_glBindFramebuffer(gl, GL_READ_FRAMEBUFFER, framebuffer_draw_id);
+            ngli_glBindFramebuffer(gl, GL_DRAW_FRAMEBUFFER, s->rt.id);
+            ngli_glBlitFramebuffer(gl, 0, 0, s->pipe_width, s->pipe_height, 0, 0, s->pipe_width, s->pipe_height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+            ngli_glBindFramebuffer(gl, GL_READ_FRAMEBUFFER, s->rt.id);
+        }
+
+        TRACE("write %dx%d buffer to FD=%d", s->pipe_width, s->pipe_height, s->pipe_fd);
+        ngli_glReadPixels(gl, 0, 0, s->pipe_width, s->pipe_height, GL_RGBA, GL_UNSIGNED_BYTE, s->pipe_buf);
+
+        const int linesize = s->pipe_width * 4;
+        for (int i = 0; i < s->pipe_height; i++) {
+            const int line = s->pipe_height - i - 1;
+            const uint8_t *linedata = s->pipe_buf + line * linesize;
+            write(s->pipe_fd, linedata, linesize);
+        }
+
+        if (s->samples > 0) {
+            ngli_glBindFramebuffer(gl, GL_READ_FRAMEBUFFER, framebuffer_read_id);
+            ngli_glBindFramebuffer(gl, GL_DRAW_FRAMEBUFFER, framebuffer_draw_id);
+        }
+#endif
+    }
+}
+
+static void camera_uninit(struct ngl_node *node)
+{
+    struct camera_priv *s = node->priv_data;
+
+    if (s->pipe_fd) {
+#ifdef VULKAN_BACKEND
+        // TODO
+#else
+        ngli_free(s->pipe_buf);
+        ngli_rendertarget_reset(&s->rt);
+        ngli_texture_reset(&s->rt_color);
+#endif
+    }
+>>>>>>> e1b7e071... WIP: vulkan
 }
 
 const struct node_class ngli_camera_class = {
