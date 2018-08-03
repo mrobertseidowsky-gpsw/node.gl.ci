@@ -42,9 +42,14 @@
 
 #include "animation.h"
 #include "drawutils.h"
+
+#ifdef VULKAN_BACKEND
+#include <vulkan/vulkan.h>
+#else
 #include "glincludes.h"
-#include "glcontext.h"
+#endif
 #include "glstate.h"
+
 #include "graphicconfig.h"
 #include "hmap.h"
 #include "hwconv.h"
@@ -59,6 +64,7 @@
 #include "rendertarget.h"
 #include "texture.h"
 
+struct glcontext;
 struct node_class;
 
 typedef int (*cmd_func_type)(struct ngl_ctx *s, void *arg);
@@ -304,10 +310,13 @@ struct media_priv {
     struct sxplayer_ctx *player;
     struct sxplayer_frame *frame;
 
+#ifdef VULKAN_BACKEND
+#else
 #if defined(TARGET_ANDROID)
     struct texture android_texture;
     struct android_surface *android_surface;
     struct android_handlerthread *android_handlerthread;
+#endif
 #endif
 };
 

@@ -27,6 +27,7 @@
 #include "nodegl.h"
 #include "nodes.h"
 #include "program.h"
+#include "spirv.h"
 
 #define OFFSET(x) offsetof(struct program_priv, x)
 static const struct node_param computeprogram_params[] = {
