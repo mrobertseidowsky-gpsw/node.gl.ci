@@ -1,3 +1,4 @@
+# cython: c_string_type=str, c_string_encoding=ascii
 #
 # Copyright 2016 GoPro Inc.
 #

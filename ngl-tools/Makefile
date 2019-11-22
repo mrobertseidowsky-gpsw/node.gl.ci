@@ -43,7 +43,8 @@ HAS_PYTHON := $(if $(shell pkg-config --exists python$(PYTHON_MAJOR) && echo 1),
 TOOLS = player render serialize
 ifeq ($(HAS_PYTHON),yes)
 PYTHON_CFLAGS := $(shell python$(PYTHON_MAJOR)-config --cflags)
-PYTHON_LDLIBS := $(shell python$(PYTHON_MAJOR)-config --libs)
+# FIXME: --embed needed between 3.7 and 3.8... fuck these assholes
+PYTHON_LDLIBS := $(shell python$(PYTHON_MAJOR)-config --libs --embed)
 TOOLS += python
 endif
 
