@@ -31,6 +31,9 @@ PYTHON     ?= python
 TARGET_OS  ?= $(shell uname -s)
 ARCH       ?= $(shell uname -m)
 
+# We can not rely on $(PYTHON) since it can be a path
+PYTHON_MAJOR = 2
+
 ifeq ($(OS),Windows_NT)
 	TARGET_OS   = MinGW-w64
 	PREFIX     ?= C:/msys64/usr/local
