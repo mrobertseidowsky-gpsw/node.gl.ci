@@ -27,6 +27,13 @@ jobs:
       run: sudo apt-get install nasm libx264-dev wget pkg-config libglfw3-dev cython python-pyqt5 python-pyqt5.qtsvg
     - name: ffmpeg
       run: |
+	sudo apt autoremove bc dns-root-data dnsmasq-base ebtables landscape-common liblxc-common
+	liblxc1 libuv1 lxcfs lxd lxd-client python3-attr python3-automat
+	python3-click python3-colorama python3-constantly python3-hyperlink
+	python3-incremental python3-pam python3-pyasn1 python3-pyasn1-modules
+	python3-service-identity python3-twisted python3-twisted-bin
+	python3-zope.interface uidmap xdelta3
+
         export PREFIX=/usr
         export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
         echo "mrs -----FFMPEG"
