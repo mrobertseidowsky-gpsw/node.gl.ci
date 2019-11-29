@@ -176,6 +176,7 @@ class MainWindow(QtWidgets.QSplitter):
 
     @QtCore.Slot(str, str)
     def _scene_changed(self, module_name, scene_name):
+        print 'ZZZZZ'
         self.setWindowTitle('%s - %s.%s' % (self._win_title_base, module_name, scene_name))
         self._currentTabChanged(self._tab_widget.currentIndex())
 
@@ -205,8 +206,10 @@ class MainWindow(QtWidgets.QSplitter):
 
     @QtCore.Slot(int)
     def _currentTabChanged(self, index):
+        print 'ZOB'
         next_view = self._tabs[index][1]
         prev_view = self._tabs[self._last_tab_index][1]
+        print index, self._last_tab_index
         if index != self._last_tab_index and hasattr(prev_view, 'leave'):
             prev_view.leave()
         if hasattr(next_view, 'enter'):

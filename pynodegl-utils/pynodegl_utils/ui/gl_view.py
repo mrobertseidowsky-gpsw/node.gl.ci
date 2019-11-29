@@ -21,6 +21,8 @@
 # under the License.
 #
 
+from fractions import Fraction
+
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import Qt
 from PySide2.QtCore import QEvent
@@ -41,7 +43,6 @@ class _GLWidget(QtWidgets.QWidget):
         self.setAttribute(Qt.WA_DontCreateNativeAncestors)
         self.setAttribute(Qt.WA_NativeWindow)
         self.setAttribute(Qt.WA_PaintOnScreen)
-        self.setMinimumSize(640, 360)
 
         self._player = None
         self._last_frame_time = 0.0
@@ -57,7 +58,8 @@ class _GLWidget(QtWidgets.QWidget):
         size = event.size()
         width = int(size.width() * self.devicePixelRatioF())
         height = int(size.height() * self.devicePixelRatioF())
-        self._player.resize(width, height)
+        print (width, height)
+        #self._player.resize(width, height)
 
         super(_GLWidget, self).resizeEvent(event)
 
@@ -73,8 +75,8 @@ class _GLWidget(QtWidgets.QWidget):
                 self._player.start()
                 self._player.onFrame.connect(self._set_last_frame_time)
                 self.onPlayerAvailable.emit()
-            else:
-                self._player.draw()
+            #else:
+            #    self._player.draw()
         elif event.type() == QEvent.Close:
             if self._player:
                 self._player.stop()
@@ -92,6 +94,46 @@ class _GLWidget(QtWidgets.QWidget):
         return self._player
 
 
+class ConstrainedARWidget(QtWidgets.QWidget):
+
+    def __init__(self, parent=None, view=None):
+        super(ConstrainedARWidget, self).__init__(parent)
+
+        size_policy = QtWidgets.QSizePolicy()
+        size_policy.setVerticalPolicy(QtWidgets.QSizePolicy.MinimumExpanding)
+        size_policy.setHorizontalPolicy(QtWidgets.QSizePolicy.MinimumExpanding)
+        self.setSizePolicy(size_policy)
+
+        self._view = view
+        self._aspect_ratio = Fraction(1, 1)
+
+    def resizeEvent(self, resize_event):  # noqa
+        #print 'YYY', resize_event.size()
+        widget_aspect_ratio = Fraction(self.width(), self.height())
+        video_graph_aspect_ratio = Fraction(self._aspect_ratio)
+        if widget_aspect_ratio <= video_graph_aspect_ratio:
+            width = self.width()
+            height = int(round(width / video_graph_aspect_ratio))
+        else:
+            height = self.height()
+            width = int(round(height * video_graph_aspect_ratio))
+        self._view.setGeometry((self.width() - width) / 2, (self.height() - height) / 2, width, height)
+
+    def update(self):
+        super(ConstrainedARWidget, self).update()
+        self._view.update()
+
+    def event(self, event):
+        #if event.type() == QtCore.QEvent.Paint:
+        #    self.resizeEvent(None)
+        return super(ConstrainedARWidget, self).event(event)
+
+    def set_aspect_ratio(self, value):
+        self._aspect_ratio = Fraction(*value)
+        self.updateGeometry()
+        self.resizeEvent(None)
+
+
 class GLView(QtWidgets.QWidget):
 
     def __init__(self, get_scene_func, config):
@@ -101,7 +143,7 @@ class GLView(QtWidgets.QWidget):
         self._cfg = None
 
         self._seekbar = Seekbar(config)
-        self._gl_widget = _GLWidget(self, config)
+        self._gl_widget = _GLWidget(None, config)
         self._gl_widget.onPlayerAvailable.connect(self._connect_seekbar)
 
         screenshot_btn = QtWidgets.QToolButton()
@@ -111,8 +153,12 @@ class GLView(QtWidgets.QWidget):
         toolbar.addWidget(self._seekbar)
         toolbar.addWidget(screenshot_btn)
 
+        x = ConstrainedARWidget(None, self._gl_widget)
+        self._x = x
+        self._gl_widget.setParent(x)
+
         self._gl_layout = QtWidgets.QVBoxLayout(self)
-        self._gl_layout.addWidget(self._gl_widget, stretch=1)
+        self._gl_layout.addWidget(x, stretch=1)
         self._gl_layout.addLayout(toolbar)
 
         screenshot_btn.clicked.connect(self._screenshot)
@@ -154,7 +200,9 @@ class GLView(QtWidgets.QWidget):
         player = self._gl_widget.get_player()
         if not player:
             return
-        player.set_aspect_ratio(ar)
+        self._x.set_aspect_ratio(ar)
+        print 'AR'
+        #player.set_aspect_ratio(ar)
 
     @QtCore.Slot(tuple)
     def set_frame_rate(self, fr):
@@ -162,6 +210,7 @@ class GLView(QtWidgets.QWidget):
         if not player:
             return
         player.set_framerate(fr)
+        print 'Y'
 
     @QtCore.Slot(int)
     def set_samples(self, samples):
@@ -169,6 +218,7 @@ class GLView(QtWidgets.QWidget):
         if not player:
             return
         player.set_samples(samples)
+        print 'X'
 
     @QtCore.Slot(tuple)
     def set_clear_color(self, color):
@@ -176,6 +226,7 @@ class GLView(QtWidgets.QWidget):
         if not player:
             return
         player.set_clear_color(color)
+        print 'C'
 
     @QtCore.Slot(str)
     def set_backend(self, backend):
@@ -183,24 +234,29 @@ class GLView(QtWidgets.QWidget):
         if not player:
             return
         player.set_backend(backend)
+        print 'B'
 
     def enter(self):
-        self._cfg = self._get_scene_func()
         if not self._cfg:
-            return
+            self._cfg = self._get_scene_func()
+            if not self._cfg:
+                return
+
+        self._gl_widget.update()
 
         player = self._gl_widget.get_player()
         if not player:
             return
         player.set_scene(self._cfg)
 
-        self._gl_widget.update()
+        print '>>'
 
     def leave(self):
         player = self._gl_widget.get_player()
         if not player:
             return
         player.pause()
+        print '<<'
 
     def closeEvent(self, close_event):
         self._gl_widget.close()

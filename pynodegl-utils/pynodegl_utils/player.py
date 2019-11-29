@@ -122,13 +122,14 @@ class Player(QtCore.QThread):
         self._configure_viewer()
 
     def _configure_viewer(self):
+        print "XXX", (self._width, self._height)
         self._viewer.configure(
             platform=ngl.PLATFORM_AUTO,
             backend=misc.get_backend(self._backend),
             window=self._window,
             width=self._width,
             height=self._height,
-            viewport=misc.get_viewport(self._width, self._height, self._aspect_ratio),
+            viewport=(0, 0, self._width, self._height),
             swap_interval=1,
             samples=self._samples,
             clear_color=self._clear_color,
