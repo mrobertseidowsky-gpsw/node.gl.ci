@@ -8,13 +8,22 @@ import pynodegl as ngl
 from pynodegl_utils.misc import Media
 
 
+_UNIT_BASE = 100
+
+
 class _NGLWidget(tk.Canvas):
 
-    def __init__(self, master, filename):
+    def __init__(self, master, media):
         tk.Canvas.__init__(self, master)
         self._viewer = ngl.Viewer()
         self._time = 0
-        self._media = Media(filename)
+        self._media = media
+
+        # Fake highlights
+        import random
+        random.seed(0)
+        self._highlights = [random.uniform(0, self._media.duration) for i in range(5)]
+
         self.bind("<Configure>", self._configure)
         self.bind("<Expose>", self._draw)
         #self.bind("<Activate>", self._draw)
@@ -26,8 +35,16 @@ class _NGLWidget(tk.Canvas):
         #self.bind("<FocusOut>", self._draw)
         #self.bind("<ResizeRequest>", self._draw)
 
+    def seek(self, value):
+        self._time = self._media.duration * float(value) / _UNIT_BASE
+        self._refresh()
+
+    @property
+    def highlights(self):
+        return self._highlights
+
     @staticmethod
-    def get_viewport(width, height, aspect_ratio):
+    def _get_viewport(width, height, aspect_ratio):
         view_width = width
         view_height = width * aspect_ratio[1] / aspect_ratio[0]
         if view_height > height:
@@ -39,10 +56,6 @@ class _NGLWidget(tk.Canvas):
 
     @staticmethod
     def _get_scene(media):
-        #m0 = cfg.medias[0]
-        #cfg.duration = m0.duration
-        #cfg.aspect_ratio = (m0.width, m0.height)
-
         q = ngl.Quad((-1, -1, 0), (2, 0, 0), (0, 2, 0))
         m = ngl.Media(media.filename)
         t = ngl.Texture2D(data_src=m)
@@ -51,10 +64,6 @@ class _NGLWidget(tk.Canvas):
         return render
 
     def _configure(self, event):
-        print 'configure', event
-
-        #self.wait_visibility()
-
         self._wid = self.winfo_id()
         self._width = self.winfo_width()
         self._height = self.winfo_height()
@@ -63,21 +72,17 @@ class _NGLWidget(tk.Canvas):
         self._viewer.configure(window=self._wid,
                          width=self._width,
                          height=self._height,
-                         viewport=self.get_viewport(self._width, self._height, self._aspect_ratio),
+                         viewport=self._get_viewport(self._width, self._height, self._aspect_ratio),
                          swap_interval=1)
         scene = self._get_scene(self._media)
         self._viewer.set_scene(scene)
         self._refresh()
 
     def _refresh(self):
+        #print 'draw at time', self._time
         self._viewer.draw(self._time)
 
     def _draw(self, event):
-        print 'draw', event.type
-        self._refresh()
-
-    def seek(self, value):
-        self._time = float(value)
         self._refresh()
 
 
@@ -183,38 +188,70 @@ class _Segment:
         self.x1 = x
 
 
+class _Highlight:
+
+    _W = 10
+    _H = 10
+    _PAD = 5
+
+    def __init__(self, canvas, x):
+        y = canvas.y1 - self._H / 2 - self._PAD
+        self._canvas = canvas
+        self._hl = canvas.create_text((x, y), text='♥', fill='yellow')
+
+    def update_y(self, y1):
+        x, _ = self._canvas.coords(self._hl)
+        y = y1 - self._H / 2 - self._PAD
+        self._canvas.coords(self._hl, (x, y))
+
 class _Z(tk.Canvas):
 
     _WPAD = 20
     _H = 50
 
-    def __init__(self, *args, **kwargs):
-        tk.Canvas.__init__(self, *args, bg='#222222', **kwargs)
-        self._rect = None
-        self._cur_rect = None
+    def __init__(self, master, media, nglw):
+        tk.Canvas.__init__(self, master, bg='#222222')
 
+        self._rect = None
         self._segments = []
+        self._media = media
+        self._nglw = nglw
+
+        w, h = self.winfo_reqwidth(), self.winfo_reqheight()
+        rect_coords = self._set_rect_coords(w, h)
+        self._rect = self.create_rectangle(*rect_coords, fill='#333355')
+
+        self._highlights = []
+        for hl_pos in nglw.highlights:
+            scaled_pos = hl_pos / media.duration # 0 -> 1
+            x = scaled_pos * (self.x2 - self.x1)
+            hl = _Highlight(self, hl_pos)
+            self._highlights.append(hl)
 
         self.bind('<Configure>', self._configure)
         self.bind('<Button-1>', self._create_segment)
         self.bind('<Double-Button-1>', self._kill_segment)
+        self.bind('<B1-Motion>', self._seek)
+
+    def _seek(self, event):
+        w = self.x2 - self.x1
+        pos = max(min(event.x, w), 0) / float(w)
+        self._nglw.seek(pos * _UNIT_BASE)
+
+    def _set_rect_coords(self, w, h):
+        self.x1 = self._WPAD
+        self.y1 = (h - self._H) / 2.
+        self.x2 = w - self._WPAD
+        self.y2 = self.y1 + self._H
+        return self.x1, self.y1, self.x2, self.y2
 
     def _configure(self, event):
-        w = event.width
-        h = event.height
-
-        self.x1 = self._WPAD
-        self.x2 = w - self._WPAD
-        self.y1 = (event.height - self._H) / 2
-        self.y2 = self.y1 + self._H
-
-        x1, y1, x2, y2 = self.x1, self.y1, self.x2, self.y2
-        if self._rect is None:
-            self._rect = self.create_rectangle(x1, y1, x2, y2, fill='#333355')
-        else:
-            self.coords(self._rect, x1, y1, x2, y2)
+        x1, y1, x2, y2 = self._set_rect_coords(event.width, event.height)
+        self.coords(self._rect, x1, y1, x2, y2)
         for segment in self._segments:
             segment.update_y(y1, y2)
+        for highlight in self._highlights:
+            highlight.update_y(y1)
 
     def set_color(self, color):
         self._color = color
@@ -318,13 +355,15 @@ def  _main():
     style = ttk.Style()
     style.theme_use('clam')
 
-    nglw = _NGLWidget(w, sys.argv[1])
+    media = Media(sys.argv[1])
+
+    nglw = _NGLWidget(w, media)
     nglw.pack(fill=tk.BOTH, expand=tk.YES)
 
-    seekbar = ttk.Scale(w, from_=0, to=100, command=nglw.seek, orient=tk.HORIZONTAL)
+    seekbar = ttk.Scale(w, from_=0, to=_UNIT_BASE, command=nglw.seek, orient=tk.HORIZONTAL)
     seekbar.pack(fill=tk.X)
 
-    z = _Z(w, nglw)
+    z = _Z(w, media, nglw)
     buttons = _Buttons(w, z)
 
     z.pack(fill=tk.BOTH, expand=True)
