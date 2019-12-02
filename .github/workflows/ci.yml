@@ -62,3 +62,4 @@ jobs:
         locate nodegl-env/bin/activate
         source /nodegl-env/bin/activate
         sudo make tests
+        echo $?
