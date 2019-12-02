@@ -50,6 +50,7 @@ jobs:
       run: |
         sudo make
 
-    - name: Run tests
+    - name: Run tests into the virtul env 
       run: |
+        source /home/user/node.gl/nodegl-env/bin/activate
         sudo make tests
