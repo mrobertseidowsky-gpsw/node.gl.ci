@@ -25,7 +25,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: Install ubuntu libs
       run: sudo apt-get install nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev
-    - name: Ffmpeg installation
+    - name: ffmpeg installation
       run: |
         export PREFIX=/usr
         export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
@@ -46,7 +46,6 @@ jobs:
         --enable-protocol='file,http' --enable-shared --disable-static --prefix=$PREFIX
         sudo make -j8
         sudo make install 
-        echo $?
         echo "mrs -----FFMPEG END"
         echo "mrs -----nproc"
         nproc
@@ -58,11 +57,11 @@ jobs:
         lsb_release -a 
         echo "mrs -----LIST DIRECTORIES"
         ls  
-        make
+        sudo make
 
     - name: Run tests
       run: |
         export PREFIX=/usr
         export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
         echo "mrs -----make test"
-        make tests
+        sudo make tests
