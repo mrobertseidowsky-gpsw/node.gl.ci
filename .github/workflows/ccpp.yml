@@ -24,7 +24,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Install ubuntu libs
-      run: sudo apt-get install nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev
+      run: sudo apt-get install nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv
     - name: ffmpeg installation
       run: |
         export PREFIX=/usr
