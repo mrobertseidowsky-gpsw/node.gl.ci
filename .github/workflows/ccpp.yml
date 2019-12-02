@@ -29,8 +29,6 @@ jobs:
 
     - name: ffmpeg installation
       run: |
-        export PREFIX=/usr
-        export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
         wget -q https://ffmpeg.org/releases/ffmpeg-4.2.1.tar.bz2
         tar -xf ffmpeg-4.2.1.tar.bz2
         cd ffmpeg-4.2.1
@@ -50,12 +48,8 @@ jobs:
 
     - name: Build node.gl
       run: |
-        export PREFIX=/usr
-        export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
         sudo make
 
     - name: Run tests
       run: |
-        export PREFIX=/usr
-        export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
         sudo make tests
