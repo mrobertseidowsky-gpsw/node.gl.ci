@@ -42,7 +42,7 @@ jobs:
         --enable-parser='mjpeg,png,h264,aac,flac' \
         --enable-muxer=mp4,matroska \
         --enable-encoder=libx264 \
-        --enable-protocol='file,http' --enable-shared --disable-static --prefix=$PREFIX
+        --enable-protocol='file,http' --enable-shared --disable-static
         sudo make -j8
         sudo make install        
 
