@@ -1,7 +1,8 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-import tkinter as tk
-import tkinter.ttk as ttk
+import Tkinter as tk
+import ttk
 
 
 class _Segment:
@@ -37,7 +38,7 @@ class _Segment:
         canvas.tag_bind(self._edge_r, '<B1-Motion>', self._resize_right)
         canvas.tag_bind(self._center, '<B1-Motion>', self._move)
 
-        print(f'Created segment ({self.x1}->{self.x2})')
+        #print(f'Created segment ({self.x1}->{self.x2})')
 
     def remove(self):
         self._canvas.delete(self._center)
@@ -55,7 +56,7 @@ class _Segment:
         min_x = self._canvas.get_min_x(self.x1, segment_exclude=self) + half_w
         max_x = self._canvas.get_max_x(self.x2, segment_exclude=self) - half_w
 
-        print(f'x:{event.x} min_x:{min_x} max_x:{max_x}')
+        #print(f'x:{event.x} min_x:{min_x} max_x:{max_x}')
         x = min(max(event.x, min_x), max_x)
 
         center_x1 = x - half_w + self._EDGE_W
@@ -79,7 +80,7 @@ class _Segment:
         min_x = self.x1 + self.W
         max_x = self._canvas.get_max_x(self.x2, segment_exclude=self)
 
-        print(f'x:{event.x} min_x:{min_x} max_x:{max_x}')
+        #print(f'x:{event.x} min_x:{min_x} max_x:{max_x}')
         x = min(max(event.x, min_x), max_x)
 
         center_x1, y1, _, y2 = self._canvas.coords(self._center)
@@ -94,7 +95,7 @@ class _Segment:
         min_x = self._canvas.get_min_x(self.x1, segment_exclude=self)
         max_x = self.x2 - self.W
 
-        print(f'x:{event.x} min_x:{min_x} max_x:{max_x}')
+        #print(f'x:{event.x} min_x:{min_x} max_x:{max_x}')
         x = min(max(event.x, min_x), max_x)
 
         _, y1, center_x2, y2 = self._canvas.coords(self._center)
@@ -112,7 +113,7 @@ class _Z(tk.Canvas):
     _H = 50
 
     def __init__(self, *args, **kwargs):
-        tk.Canvas.__init__(self, *args, **kwargs, bg='#222222')
+        tk.Canvas.__init__(self, *args, bg='#222222', **kwargs)
         self._rect = None
         self._cur_rect = None
 
@@ -177,16 +178,16 @@ class _Z(tk.Canvas):
 
         segment = self.get_segment_from_x(x)
         if segment:
-            print('clicked an existing segment, ignoring')
+            #print('clicked an existing segment, ignoring')
             return
 
         min_x = self.get_min_x(x)
         max_x = self.get_max_x(x)
-        print(f'min_x={min_x} max_x={max_x}')
+        #print(f'min_x={min_x} max_x={max_x}')
 
         avail = max_x - min_x
         if avail < _Segment.W:
-            print(f'no space for segment (avail:{avail} need:{_Segment.W})')
+            #print(f'no space for segment (avail:{avail} need:{_Segment.W})')
             return
 
         x_start = x - _Segment.W / 2
@@ -195,7 +196,7 @@ class _Z(tk.Canvas):
         elif x_start + _Segment.W > max_x:
             x_start = max_x - _Segment.W
 
-        print(f'create segment at x={x_start}')
+        #print(f'create segment at x={x_start}')
         segment = _Segment(self, x_start, self._color)
         self._segments.append(segment)
 
