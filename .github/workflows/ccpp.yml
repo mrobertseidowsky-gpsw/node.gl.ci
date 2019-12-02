@@ -25,7 +25,7 @@ jobs:
     - uses: actions/checkout@v1
 
     - name: Install ubuntu libs
-      run: sudo apt-get install nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv
+      run: sudo apt-get install nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
 
     - name: ffmpeg installation
       run: |
@@ -50,7 +50,9 @@ jobs:
       run: |
         sudo make
 
-    - name: Run tests into the virtul env 
+    - name: Go into the virtualenv and run tests
       run: |
+        sudo updatedb
+        locate nodegl-env/bin/activate
         source /home/user/node.gl/nodegl-env/bin/activate
         sudo make tests
