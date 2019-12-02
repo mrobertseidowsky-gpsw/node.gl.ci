@@ -45,14 +45,14 @@ jobs:
         --enable-muxer=mp4,matroska \
         --enable-encoder=libx264 \
         --enable-protocol='file,http' --enable-shared --disable-static --prefix=$PREFIX 
-        sudo make -j8
-        sudo make install        
+        make -j8
+        make install        
 
     - name: Build node.gl
       run: |
         export PREFIX=/usr
         export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
-        sudo make
+        make
 
     - name: Go into the virtualenv and run tests
       run: |
@@ -61,5 +61,5 @@ jobs:
         sudo updatedb
         locate nodegl-env/bin/activate
         source /nodegl-env/bin/activate
-        sudo make tests
+        make tests
         echo $?
