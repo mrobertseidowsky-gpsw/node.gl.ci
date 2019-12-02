@@ -54,5 +54,5 @@ jobs:
       run: |
         sudo updatedb
         locate nodegl-env/bin/activate
-        source /home/user/node.gl/nodegl-env/bin/activate
+        source /nodegl-env/bin/activate
         sudo make tests
