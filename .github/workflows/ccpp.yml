@@ -24,10 +24,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Install ubuntu libs
-      run: sudo apt-get install nasm libx264-dev wget pkg-config libglfw3-dev cython python-pyqt5 python-pyqt5.qtsvg
-    - name: ffmpeg
+      run: sudo apt-get install nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev
+    - name: Ffmpeg installation
       run: |
-        sudo apt autoremove
         export PREFIX=/usr
         export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
         echo "mrs -----FFMPEG"
@@ -46,11 +45,12 @@ jobs:
         --enable-encoder=libx264 \
         --enable-protocol='file,http' --enable-shared --disable-static --prefix=$PREFIX
         sudo make -j8
-        echo "mrs -----FFMPEG END"
         sudo make install 
         echo $?
-        find $PREFIX
-    - name: Try make 
+        echo "mrs -----FFMPEG END"
+        echo "mrs -----nproc"
+        nproc
+    - name: Build
       run: |
         export PREFIX=/usr
         export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
@@ -60,9 +60,9 @@ jobs:
         ls  
         make
 
-    - name: Try test
+    - name: Run tests
       run: |
         export PREFIX=/usr
         export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
-        echo "mrs -----UPDATE"
-        make test
+        echo "mrs -----make test"
+        make tests
