@@ -60,10 +60,6 @@ jobs:
 
     - name: Go into the virtualenv and run tests
       run: |
-        export PREFIX=/usr
-        export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
-        updatedb
-        locate nodegl-env/bin/activate
-        source /nodegl-env/bin/activate
+        . /__w/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
         make tests
         echo $?
