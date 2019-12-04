@@ -39,7 +39,6 @@ jobs:
                 
         make -j8
         make install        
-        lsb_release -a
     - name: Build node.gl
       run: |
         echo $PATH
