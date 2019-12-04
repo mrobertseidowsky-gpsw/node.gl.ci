@@ -56,8 +56,6 @@ jobs:
     - name: Build node.gl
       run: |
         echo $PATH
-# export PREFIX=/usr
-#        export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
         make
 
     - name: Go into the virtualenv and run tests
