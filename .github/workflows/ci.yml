@@ -24,6 +24,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v1
+    - uses: docker://ubuntu:19.10
 
     - name: Install ubuntu libs
       run: apt-get install nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
