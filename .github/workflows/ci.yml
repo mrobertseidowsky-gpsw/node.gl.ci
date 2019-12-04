@@ -60,6 +60,6 @@ jobs:
 
     - name: Go into the virtualenv and run tests
       run: |
-        . /__w/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
+        source /__w/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
         make tests
         echo $?
