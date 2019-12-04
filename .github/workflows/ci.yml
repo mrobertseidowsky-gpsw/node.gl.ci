@@ -30,7 +30,7 @@ jobs:
       run: |
         apt-get -y --force-yes update
         apt-get -y install build-essential
-        apt-get -y install nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
+        apt-get -y install zlib1g-dev  nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
 
     - name: ffmpeg installation
       run: |
