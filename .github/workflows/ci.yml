@@ -32,13 +32,6 @@ jobs:
         apt-get -y install build-essential
         apt-get -y install ffmpeg curl zlib1g-dev  nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
 
-    - name: ffmpeg installation
-      run: |
-        export PREFIX=/usr
-        export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig        
-                
-        make -j8
-        make install        
     - name: Build node.gl
       run: |
         echo $PATH
