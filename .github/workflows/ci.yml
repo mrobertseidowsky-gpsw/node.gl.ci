@@ -28,7 +28,7 @@ jobs:
 
     - name: Install ubuntu libs
       run: |
-        sudo apt-get update
+        apt-get update -qq
         apt-get install nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
 
     - name: ffmpeg installation
