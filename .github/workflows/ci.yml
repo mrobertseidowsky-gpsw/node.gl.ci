@@ -52,7 +52,7 @@ jobs:
         --enable-protocol='file,http' --enable-shared --disable-static --prefix=$PREFIX 
         make -j8
         make install        
-
+        lsb_release -a
     - name: Build node.gl
       run: |
         echo $PATH
@@ -60,6 +60,6 @@ jobs:
 
     - name: Go into the virtualenv and run tests
       run: |
-        source /__w/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
+        . /__w/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
         make tests
         echo $?
