@@ -26,6 +26,8 @@ jobs:
 
     - name: Install mac libs
       run: |
+        echo "WHO I AM"
+        sw_vers
         brew update
         brew upgrade
         sudo easy_install pip
