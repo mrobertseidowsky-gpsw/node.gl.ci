@@ -305,17 +305,11 @@ static int block_init(struct ngl_node *node)
     if (!s->field_info)
         return NGL_ERROR_MEMORY;
 
-<<<<<<< HEAD
-    s->usage = NGLI_BUFFER_USAGE_STATIC;
-||||||| parent of e1b7e071... WIP: vulkan
-    s->usage = GL_STATIC_DRAW;
-=======
 #ifdef VULKAN_BACKEND
     s->usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 #else
-    s->usage = GL_STATIC_DRAW;
+    s->usage = NGLI_BUFFER_USAGE_STATIC;
 #endif
->>>>>>> e1b7e071... WIP: vulkan
 
     s->data_size = 0;
     for (int i = 0; i < s->nb_fields; i++) {
@@ -331,14 +325,8 @@ static int block_init(struct ngl_node *node)
 
 #ifndef VULKAN_BACKEND
         if (field_funcs[is_array ? IS_ARRAY : IS_SINGLE].has_changed(field_node))
-<<<<<<< HEAD
             s->usage = NGLI_BUFFER_USAGE_DYNAMIC;
-||||||| parent of e1b7e071... WIP: vulkan
-            s->usage = GL_DYNAMIC_DRAW;
-=======
-            s->usage = GL_DYNAMIC_DRAW;
 #endif
->>>>>>> e1b7e071... WIP: vulkan
 
         struct block_field_info *fi = &s->field_info[i];
         fi->is_array = is_array;
