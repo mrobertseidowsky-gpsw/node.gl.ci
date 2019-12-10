@@ -1,5 +1,5 @@
 
-![GitHub Actions status | mrobertseidowsky-gpsw/node.gl.ci](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/.github/workflows/ci.yml/badge.svg?master)
+![GitHub Actions status | mrobertseidowsky-gpsw/node.gl.ci](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/.github/workflows/ci_linux.yml/badge.svg?master)
 
 ![GitHub Actions status | mrobertseidowsky-gpsw/node.gl.ci](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/.github/workflows/ci_mac.yml/badge.svg?master)
 
