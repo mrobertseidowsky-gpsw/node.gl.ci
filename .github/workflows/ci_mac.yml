@@ -26,7 +26,8 @@ jobs:
 
     - name: Install mac libs
       run: |
-        brew install update
+        brew update
+        brew upgrade
         brew install build-essential
         brew install curl zlib1g-dev  nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
         brew install ffmpeg libavcodec-dev libavutil-dev libavformat-dev libavdevice-dev libavfilter-dev libswscale-dev libswresample-dev libpostproc-dev
