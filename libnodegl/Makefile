@@ -63,28 +63,14 @@ LIB_PCNAME   = $(LIB_BASENAME).pc
 LIB_OBJS = animation.o              \
            api.o                    \
            bstr.o                   \
-<<<<<<< HEAD
            buffer.o                 \
            colorconv.o              \
-||||||| parent of e1b7e071... WIP: vulkan
-           buffer.o                 \
-=======
->>>>>>> e1b7e071... WIP: vulkan
            darray.o                 \
            default_shaders.o        \
            deserialize.o            \
            dot.o                    \
            drawutils.o              \
            format.o                 \
-<<<<<<< HEAD
-           gctx.o                   \
-           glcontext.o              \
-           glstate.o                \
-||||||| parent of e1b7e071... WIP: vulkan
-           glcontext.o              \
-           glstate.o                \
-=======
->>>>>>> e1b7e071... WIP: vulkan
            graphicconfig.o          \
            hmap.o                   \
            hwupload.o               \
@@ -127,18 +113,10 @@ LIB_OBJS = animation.o              \
            node_userswitch.o        \
            nodes.o                  \
            params.o                 \
-<<<<<<< HEAD
            pass.o                   \
            pipeline.o               \
            program.o                \
            program_reflection.o     \
-           rendertarget.o           \
-||||||| parent of e1b7e071... WIP: vulkan
-           pipeline.o               \
-           program.o                \
-           rendertarget.o           \
-=======
->>>>>>> e1b7e071... WIP: vulkan
            serialize.o              \
            spirv.o                  \
            transforms.o             \
@@ -152,15 +130,18 @@ LIB_OBJS += $(LIB_OBJS_ARCH_$(ARCH))
 ifeq ($(BACKEND),vk)
 LIB_OBJS += backend_vk.o            \
             buffer_vk.o             \
+            gctx_vk.o               \
             glstate_vk.o            \
             pipeline_vk.o           \
             program_vk.o            \
             texture_vk.o            \
             topology_vk.o           \
+            rendertarget_vk.o       \
 
 else
 LIB_OBJS += backend_gl.o            \
             buffer.o                \
+            gctx.o                  \
             glcontext.o             \
             glstate.o               \
             hwconv.o                \
@@ -197,44 +178,26 @@ LIB_EXTRA_CFLAGS_Darwin    = -I$(MVK_ROOT)/include/
 LIB_EXTRA_CFLAGS_iPhone    = -I$(MVK_ROOT)/include/
 endif
 
-<<<<<<< HEAD
 LIB_LDLIBS                 = -lm -lpthread -L/home/mateo/src/devel/.sx/stupeflix/lib -lglslang -lstdc++
-||||||| parent of e1b7e071... WIP: vulkan
-LIB_LDLIBS                 = -lm -lpthread
-=======
-LIB_LDLIBS                 = -lm -lpthread
 ifeq ($(BACKEND),vk)
 LIB_LDLIBS                += -lshaderc_shared
 endif
 
->>>>>>> e1b7e071... WIP: vulkan
 LIB_EXTRA_LDLIBS_Linux     =
 ifneq ($(BACKEND),vk)
 LIB_EXTRA_LDLIBS_Darwin    = -framework OpenGL -framework CoreVideo -framework CoreFoundation -framework AppKit -framework IOSurface
-<<<<<<< HEAD
-LIB_EXTRA_LDLIBS_Android   = -legl -landroid
-||||||| parent of e1b7e071... WIP: vulkan
-LIB_EXTRA_LDLIBS_Android   = -legl
-=======
->>>>>>> e1b7e071... WIP: vulkan
 LIB_EXTRA_LDLIBS_iPhone    = -framework CoreMedia
 else
 LIB_EXTRA_LDLIBS_Darwin    = -L$(MVK_ROOT)/macOS -Wl,-rpath,$(MVK_ROOT)/macOS -lMoltenVK
 LIB_EXTRA_LDLIBS_iPhone    = -L$(MVK_ROOT)/iOS -Wl,-rpath,$(MVK_ROOT)/iOS -lMoltenVK
 endif
-LIB_EXTRA_LDLIBS_Android   = -legl
+LIB_EXTRA_LDLIBS_Android   = -legl -landroid
 LIB_EXTRA_LDLIBS_MinGW-w64 = -lopengl32 -lgdi32
 
-<<<<<<< HEAD
 LIB_PKG_CONFIG_LIBS               = "libsxplayer >= 9.4.0"
-||||||| parent of e1b7e071... WIP: vulkan
-LIB_PKG_CONFIG_LIBS               = "libsxplayer >= 9.3.1"
-=======
-LIB_PKG_CONFIG_LIBS               = "libsxplayer >= 9.3.1"
 ifeq ($(BACKEND),vk)
 LIB_EXTRA_PKG_CONFIG_LIBS_Linux   = x11 vulkan
 else
->>>>>>> e1b7e071... WIP: vulkan
 LIB_EXTRA_PKG_CONFIG_LIBS_Linux   = x11 gl egl
 endif
 LIB_EXTRA_PKG_CONFIG_LIBS_Darwin  =
@@ -425,18 +388,12 @@ uninstall:
 	$(RM) $(DESTDIR)$(PREFIX)/include/nodegl.h
 	$(RM) -r $(DESTDIR)$(PREFIX)/share/nodegl
 
-<<<<<<< HEAD
-.PHONY: all updatespecs clean install uninstall gen-gl-wrappers testprogs tests
-||||||| parent of e1b7e071... WIP: vulkan
-.PHONY: all updatespecs clean install uninstall gen-gl-wrappers
-=======
 # XXX/HACK
 vksdk: $(VKSDK_TGZ)
 	tar xf $<
 $(VKSDK_TGZ):
 	wget $(VKSDK_BASEURL)/$@
 
-.PHONY: all updatespecs clean install uninstall gen-gl-wrappers vksdk
->>>>>>> e1b7e071... WIP: vulkan
+.PHONY: all updatespecs clean install uninstall gen-gl-wrappers testprogs tests vksdk
 
 -include $(LIB_DEPS)
