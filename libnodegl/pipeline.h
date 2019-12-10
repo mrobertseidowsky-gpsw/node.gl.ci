@@ -116,8 +116,40 @@ struct pipeline {
 
     void (*exec)(const struct pipeline *s, struct glcontext *gl);
 
+#ifdef VULKAN_BACKEND
+    int last_width;
+    int last_height;
+
+    VkPipelineLayout pipeline_layout;
+    VkPipeline vkpipeline;
+    VkPipelineBindPoint bind_point;
+    VkCommandBuffer *command_buffers;
+    int nb_command_buffers; // XXX drop for vk->nb_framebuffers
+
+    int queue_family_id;
+    VkCommandPool command_pool;
+
+    struct darray binding_descriptors;
+    struct darray constant_descriptors;
+
+    VkDescriptorPool descriptor_pool;
+    VkDescriptorSetLayout descriptor_set_layout;
+    VkDescriptorSet *descriptor_sets;
+
+    VkVertexInputBindingDescription *bind_descs;
+    VkVertexInputAttributeDescription *attr_descs;
+    VkBuffer *vkbufs;
+    VkDeviceSize *vkbufs_offsets;
+    int nb_binds;
+
+    struct buffer uniform_buffer;
+
+    int flags;
+#else
     uint64_t used_texture_units;
     GLuint vao_id;
+#endif
+
 };
 
 int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pipeline_params *params);

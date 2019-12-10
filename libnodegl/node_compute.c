@@ -92,59 +92,7 @@ static int compute_init(struct ngl_node *node)
 {
     struct ngl_ctx *ctx = node->ctx;
     struct compute_priv *s = node->priv_data;
-<<<<<<< HEAD
     struct pass_params params = {
-||||||| parent of e1b7e071... WIP: vulkan
-
-    if (!(gl->features & NGLI_FEATURE_COMPUTE_SHADER_ALL)) {
-        LOG(ERROR, "context does not support compute shaders");
-        return -1;
-    }
-
-    if (s->nb_group_x > gl->max_compute_work_group_counts[0] ||
-        s->nb_group_y > gl->max_compute_work_group_counts[1] ||
-        s->nb_group_z > gl->max_compute_work_group_counts[2]) {
-        LOG(ERROR,
-            "compute work group size (%d, %d, %d) exceeds driver limit (%d, %d, %d)",
-            s->nb_group_x,
-            s->nb_group_y,
-            s->nb_group_z,
-            gl->max_compute_work_group_counts[0],
-            gl->max_compute_work_group_counts[1],
-            gl->max_compute_work_group_counts[2]);
-        return -1;
-    }
-
-    struct pipeline_params params = {
-=======
-
-#ifdef VULKAN_BACKEND
-    /* TODO */
-#else
-    struct glcontext *gl = ctx->glcontext;
-
-    if (!(gl->features & NGLI_FEATURE_COMPUTE_SHADER_ALL)) {
-        LOG(ERROR, "context does not support compute shaders");
-        return -1;
-    }
-
-    if (s->nb_group_x > gl->max_compute_work_group_counts[0] ||
-        s->nb_group_y > gl->max_compute_work_group_counts[1] ||
-        s->nb_group_z > gl->max_compute_work_group_counts[2]) {
-        LOG(ERROR,
-            "compute work group size (%d, %d, %d) exceeds driver limit (%d, %d, %d)",
-            s->nb_group_x,
-            s->nb_group_y,
-            s->nb_group_z,
-            gl->max_compute_work_group_counts[0],
-            gl->max_compute_work_group_counts[1],
-            gl->max_compute_work_group_counts[2]);
-        return -1;
-    }
-#endif
-
-    struct pipeline_params params = {
->>>>>>> e1b7e071... WIP: vulkan
         .label = node->label,
         .program = s->program,
         .textures = s->textures,
@@ -171,85 +119,8 @@ static int compute_update(struct ngl_node *node, double t)
 
 static void compute_draw(struct ngl_node *node)
 {
-<<<<<<< HEAD
-||||||| parent of e1b7e071... WIP: vulkan
-    struct ngl_ctx *ctx = node->ctx;
-    struct glcontext *gl = ctx->glcontext;
-=======
-#ifdef VULKAN_BACKEND
-    struct ngl_ctx *ctx = node->ctx;
-    struct glcontext *vk = ctx->glcontext;
     struct compute_priv *s = node->priv_data;
-    struct pipeline *pipeline = &s->pipeline;
-
-    VkCommandBuffer cmd_buf = pipeline->command_buffers[vk->img_index];
-
-    VkCommandBufferBeginInfo command_buffer_begin_info = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-        .flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
-    };
-
-    VkResult vkret = vkBeginCommandBuffer(cmd_buf, &command_buffer_begin_info);
-    if (vkret != VK_SUCCESS)
-        return;
-
-    int ret = ngli_pipeline_bind(&s->pipeline);
-    if (ret < 0) {
-        LOG(ERROR, "could not bind pipeline");
-    }
-
-    vkCmdDispatch(cmd_buf, s->nb_group_x, s->nb_group_y, s->nb_group_z);
-
-    ret = ngli_pipeline_unbind(&s->pipeline);
-    if (ret < 0) {
-        LOG(ERROR, "could not unbind pipeline");
-    }
-
-    vkret = vkEndCommandBuffer(cmd_buf);
-    if (vkret != VK_SUCCESS)
-        return;
-
-    if (!ngli_darray_push(&vk->command_buffers, &cmd_buf))
-        return;
-#else
-    struct ngl_ctx *ctx = node->ctx;
-    struct glcontext *gl = ctx->glcontext;
->>>>>>> e1b7e071... WIP: vulkan
-    struct compute_priv *s = node->priv_data;
-<<<<<<< HEAD
     ngli_pass_exec(&s->pass);
-||||||| parent of e1b7e071... WIP: vulkan
-
-    int ret = ngli_pipeline_bind(&s->pipeline);
-    if (ret < 0) {
-        LOG(ERROR, "pipeline upload data error");
-    }
-
-    ngli_glMemoryBarrier(gl, GL_ALL_BARRIER_BITS);
-    ngli_glDispatchCompute(gl, s->nb_group_x, s->nb_group_y, s->nb_group_z);
-    ngli_glMemoryBarrier(gl, GL_ALL_BARRIER_BITS);
-
-    ret = ngli_pipeline_unbind(&s->pipeline);
-    if (ret < 0) {
-        LOG(ERROR, "could not unbind pipeline");
-    }
-=======
-
-    int ret = ngli_pipeline_bind(&s->pipeline);
-    if (ret < 0) {
-        LOG(ERROR, "pipeline upload data error");
-    }
-
-    ngli_glMemoryBarrier(gl, GL_ALL_BARRIER_BITS);
-    ngli_glDispatchCompute(gl, s->nb_group_x, s->nb_group_y, s->nb_group_z);
-    ngli_glMemoryBarrier(gl, GL_ALL_BARRIER_BITS);
-
-    ret = ngli_pipeline_unbind(&s->pipeline);
-    if (ret < 0) {
-        LOG(ERROR, "could not unbind pipeline");
-    }
-#endif
->>>>>>> e1b7e071... WIP: vulkan
 }
 
 const struct node_class ngli_compute_class = {
