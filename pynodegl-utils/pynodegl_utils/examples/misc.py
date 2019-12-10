@@ -741,9 +741,12 @@ def vktest(cfg):
     return camera
 
 
-@scene(color2={'type': 'color'},
-       factor0={'type': 'range', 'range': [0, 1], 'unit_base': 100},
-       factor1={'type': 'range', 'range': [0, 1], 'unit_base': 100})
+#@scene(color2={'type': 'color'},
+#       factor0={'type': 'range', 'range': [0, 1], 'unit_base': 100},
+#       factor1={'type': 'range', 'range': [0, 1], 'unit_base': 100})
+@scene(color2=scene.Color(),
+        factor0=scene.Range(range=[0,1], unit_base=100),
+        factor1=scene.Range(range=[0,1], unit_base=100))
 def vkuniform(cfg, color2=(1.0, 0.0, 1.0, 1.0), factor0=1.0, factor1=1.0):
     geometry = ngl.Quad()
     program = ngl.Program(fragment=cfg.get_frag('vkuniform'),
