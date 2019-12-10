@@ -31,7 +31,7 @@ jobs:
         sudo easy_install pip
         brew install python2 
         sudo pip install virtualenv
-        brew install ffmpeg libavcodec-dev libavutil-dev libavformat-dev libavdevice-dev libavfilter-dev libswscale-dev libswresample-dev libpostproc-dev
+        brew install ffmpeg
    
     - name: Build node.gl
       run: |
