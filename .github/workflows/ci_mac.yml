@@ -28,7 +28,8 @@ jobs:
       run: |
         brew update
         brew upgrade
-        brew install curl zlib nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
+      # libx264-dev
+        brew install curl zlib nasm wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
         brew install ffmpeg libavcodec-dev libavutil-dev libavformat-dev libavdevice-dev libavfilter-dev libswscale-dev libswresample-dev libpostproc-dev
    
     - name: Build node.gl
