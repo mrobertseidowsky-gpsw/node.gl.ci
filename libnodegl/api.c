@@ -81,10 +81,16 @@ static int cmd_reconfigure(struct ngl_ctx *s, void *arg)
     struct ngl_config *config = arg;
     struct ngl_config *current_config = &s->config;
 
+    LOG(ERROR, "%d:%d %d:%d", current_config->platform, config->platform,
+        current_config->backend, config->backend);
+
     if (config->platform == NGL_PLATFORM_AUTO)
         config->platform = current_config->platform;
     if (config->backend == NGL_BACKEND_AUTO)
         config->backend = current_config->backend;
+
+    LOG(ERROR, "%d:%d %d:%d", current_config->platform, config->platform,
+        current_config->backend, config->backend);
 
     if (current_config->platform != config->platform ||
         current_config->backend  != config->backend) {
@@ -149,6 +155,8 @@ static int cmd_configure(struct ngl_ctx *s, void *arg)
         LOG(ERROR, "can not determine which platform to use");
         return config->platform;
     }
+
+    LOG(ERROR, "config: %d", config->backend);
 
     int ret = s->backend->configure(s, config);
     if (ret < 0)

@@ -50,6 +50,9 @@ static int register_uniform(struct pass *s, const char *name, struct ngl_node *u
         return 0;
 
     struct hmap *infos = s->pipeline_program->uniforms;
+    if (!infos)
+        return 0;
+
     if (!ngli_hmap_get(infos, name)) {
         struct pass_params *params = &s->params;
         LOG(WARNING, "uniform %s attached to pipeline %s not found in shader", name, params->label);
@@ -95,6 +98,8 @@ static int register_uniforms(struct pass *s)
     for (int i = 0; i < NGLI_ARRAY_NB(pipeline_uniforms); i++) {
         struct pipeline_uniform *pipeline_uniform = &pipeline_uniforms[i];
         struct hmap *infos = s->pipeline_program->uniforms;
+        if (!infos)
+            return 0;
         if (!ngli_hmap_get(infos, pipeline_uniform->name))
             continue;
         if (!ngli_darray_push(&s->pipeline_uniforms, pipeline_uniform))

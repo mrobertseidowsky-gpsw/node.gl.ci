@@ -1030,6 +1030,7 @@ static int vk_reconfigure(struct ngl_ctx *s, const struct ngl_config *config)
     struct glcontext *vk = s->glcontext;
 
     memcpy(&vk->config, config, sizeof(*config));
+    memcpy(&s->config, config, sizeof(*config));
     return 0;
 }
 
@@ -1040,9 +1041,11 @@ static int vk_configure(struct ngl_ctx *s, const struct ngl_config *config)
         return -1;
 
     memcpy(&vk->config, config, sizeof(*config));
+    memcpy(&s->config, config, sizeof(*config));
 
     int ret = vulkan_init(vk, config->display, config->window);
     if (ret < 0) {
+        LOG(ERROR, "error >>");
         ngli_free(vk);
         return ret;
     }

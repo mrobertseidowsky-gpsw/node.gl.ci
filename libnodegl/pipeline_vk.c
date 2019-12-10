@@ -1172,34 +1172,41 @@ int ngli_pipeline_unbind(struct pipeline *s)
 #else
 int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pipeline_params *params)
 {
+    LOG(ERROR, "stub");
     return 0;
 }
 
 int ngli_pipeline_get_uniform_index(struct pipeline *s, const char *name)
 {
+    LOG(ERROR, "stub");
     return 0;
 }
 
 int ngli_pipeline_get_texture_index(struct pipeline *s, const char *name)
 {
+    LOG(ERROR, "stub");
     return 0;
 }
 
 int ngli_pipeline_update_uniform(struct pipeline *s, int index, const void *value)
 {
+    LOG(ERROR, "stub");
     return 0;
 }
 
 int ngli_pipeline_update_texture(struct pipeline *s, int index, struct texture *texture)
 {
+    LOG(ERROR, "stub");
     return 0;
 }
 
 void ngli_pipeline_exec(struct pipeline *s)
 {
+    LOG(ERROR, "stub");
 }
 
 void ngli_pipeline_reset(struct pipeline *s)
 {
+    LOG(ERROR, "stub");
 }
 #endif
