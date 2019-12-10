@@ -19,27 +19,22 @@ on:
 jobs:
   build_libs:
 
-    runs-on: ubuntu-18.04
-    container: ubuntu:19.10
+    runs-on: macos-latest
 
     steps:
     - uses: actions/checkout@v1
-    - uses: docker://ubuntu:19.10
 
-    - name: Install ubuntu libs
+    - name: Install mac libs
       run: |
-        apt-get -y --force-yes update
-        apt-get -y install build-essential
-        apt-get -y install curl zlib1g-dev  nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
-        apt-get -y install ffmpeg libavcodec-dev libavutil-dev libavformat-dev libavdevice-dev libavfilter-dev libswscale-dev libswresample-dev libpostproc-dev
+        brew install -y --force-yes update
+        brew -y install build-essential
+        brew -y install curl zlib1g-dev  nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
+        brew -y install ffmpeg libavcodec-dev libavutil-dev libavformat-dev libavdevice-dev libavfilter-dev libswscale-dev libswresample-dev libpostproc-dev
    
     - name: Build node.gl
       run: |
-        echo $PATH
+        echo "MRS-WHO I AM"
+        lsb_release -a  
+        echo "MAKE"
         make
-
-    #- name: Go into the virtualenv and run tests
-    #  run: |
-    #    . /__w/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
-    #    make tests
-    #    echo $?
+ 
