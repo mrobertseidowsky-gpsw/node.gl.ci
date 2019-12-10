@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 #
 # Copyright 2016 GoPro Inc.
 #
@@ -20,10 +19,6 @@
 # under the License.
 #
 
-||||||| parent of e1b7e071... WIP: vulkan
-=======
-import array
->>>>>>> e1b7e071... WIP: vulkan
 import os.path as op
 import tempfile
 import platform
