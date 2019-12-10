@@ -441,18 +441,11 @@ int ngli_texture_upload(struct texture *s, const uint8_t *data, int linesize)
 
 int ngli_texture_generate_mipmap(struct texture *s)
 {
-<<<<<<< HEAD
     struct ngl_ctx *ctx = s->ctx;
     struct glcontext *gl = ctx->glcontext;
-||||||| parent of e1b7e071... WIP: vulkan
-    struct glcontext *gl = s->gl;
-=======
->>>>>>> e1b7e071... WIP: vulkan
     const struct texture_params *params = &s->params;
 
     ngli_assert(!(params->usage & NGLI_TEXTURE_USAGE_ATTACHMENT_ONLY));
-
-    struct glcontext *gl = s->gl;
 
     ngli_glBindTexture(gl, s->target, s->id);
     ngli_glGenerateMipmap(gl, s->target);
