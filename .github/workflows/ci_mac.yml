@@ -29,14 +29,12 @@ jobs:
         brew update
         brew upgrade
         sudo easy_install pip
-        brew install python2 
+        brew install python2 curl zlib nasm wget pkg-config glfw3
         sudo pip install virtualenv
         brew install ffmpeg
    
     - name: Build node.gl
       run: |
-        echo "MRS-WHO I AM"
-        lsb_release -a  
         echo "MAKE"
         make
  
