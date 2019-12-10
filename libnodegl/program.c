@@ -310,7 +310,6 @@ int ngli_program_init(struct program *s, struct ngl_ctx *ctx, const char *vertex
 
     struct glcontext *gl = ctx->glcontext;
 
-<<<<<<< HEAD
     if (compute && (gl->features & NGLI_FEATURE_COMPUTE_SHADER_ALL) != NGLI_FEATURE_COMPUTE_SHADER_ALL) {
         LOG(ERROR, "context does not support compute shaders");
         return NGL_ERROR_UNSUPPORTED;
@@ -321,14 +320,6 @@ int ngli_program_init(struct program *s, struct ngl_ctx *ctx, const char *vertex
     if (ret == 0)
         ngli_program_reflection_dump(&r);
 
-||||||| parent of e1b7e071... WIP: vulkan
-=======
-    if (compute && !(gl->features & NGLI_FEATURE_COMPUTE_SHADER_ALL)) {
-        LOG(ERROR, "context does not support compute shaders");
-        return -1;
-    }
-
->>>>>>> e1b7e071... WIP: vulkan
     s->ctx = ctx;
     s->id = ngli_glCreateProgram(gl);
 
