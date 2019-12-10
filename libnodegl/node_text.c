@@ -125,7 +125,6 @@ static const struct node_param text_params[] = {
     {NULL}
 };
 
-#ifndef VULKAN_BACKEND
 static void set_canvas_dimensions(struct canvas *canvas, const char *s)
 {
     canvas->w = 0;
@@ -187,6 +186,8 @@ static int prepare_canvas(struct text_priv *s)
     return 0;
 }
 
+
+// FIXME
 static const char * const vertex_data =
     "#version 100"                                                          "\n"
     "precision highp float;"                                                "\n"
@@ -214,7 +215,6 @@ static const char * const fragment_data =
 #define C(index) s->box_corner[index]
 #define W(index) s->box_width[index]
 #define H(index) s->box_height[index]
-#endif
 
 static int text_init(struct ngl_node *node)
 {

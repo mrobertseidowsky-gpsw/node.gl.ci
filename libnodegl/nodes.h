@@ -48,9 +48,8 @@
 #else
 #include "glincludes.h"
 #endif
-
-#include "glcontext.h"
 #include "glstate.h"
+
 #include "graphicconfig.h"
 #include "hmap.h"
 #include "hwconv.h"
@@ -65,6 +64,7 @@
 #include "rendertarget.h"
 #include "texture.h"
 
+struct glcontext;
 struct node_class;
 
 typedef int (*cmd_func_type)(struct ngl_ctx *s, void *arg);

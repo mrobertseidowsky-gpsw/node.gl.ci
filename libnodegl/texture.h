@@ -24,6 +24,7 @@
 
 #include "glincludes.h"
 #include "utils.h"
+#include <vulkan/vulkan.h>
 
 struct ngl_ctx;
 

@@ -1049,8 +1049,6 @@ static int vk_configure(struct ngl_ctx *s, const struct ngl_config *config)
 
     s->glcontext = vk;
 
-    ngli_glstate_probe(vk, &s->glstate);
-
     struct graphicconfig *graphicconfig = &s->graphicconfig;
     ngli_graphicconfig_init(graphicconfig);
     const GLint scissor[] = {0, 0, config->width, config->height};

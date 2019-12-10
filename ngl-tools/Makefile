@@ -36,21 +36,15 @@ TOOLS_LDLIBS += $(shell $(PKG_CONFIG) --libs   gl)
 endif
 endif
 
-<<<<<<< HEAD
-# Warning: while all 3 "python{,2,3}-config" should work as expected,
-# "pkg-config --exists python" never will, so an explicit version is needed.
-HAS_PYTHON := $(if $(shell pkg-config --exists python$(PYTHON_MAJOR) && echo 1),yes,no)
-||||||| parent of e1b7e071... WIP: vulkan
-HAS_PYTHON := $(if $(shell pkg-config --exists python2 && echo 1),yes,no)
-=======
 # Vulkan
 ifeq ($(BACKEND),vk)
 TOOLS_CFLAGS += $(shell $(PKG_CONFIG) --cflags vulkan)
 TOOLS_LDLIBS += $(shell $(PKG_CONFIG) --libs   vulkan)
 endif
 
-HAS_PYTHON := $(if $(shell pkg-config --exists python2 && echo 1),yes,no)
->>>>>>> e1b7e071... WIP: vulkan
+# Warning: while all 3 "python{,2,3}-config" should work as expected,
+# "pkg-config --exists python" never will, so an explicit version is needed.
+HAS_PYTHON := $(if $(shell pkg-config --exists python$(PYTHON_MAJOR) && echo 1),yes,no)
 
 TOOLS = player render serialize
 ifeq ($(HAS_PYTHON),yes)

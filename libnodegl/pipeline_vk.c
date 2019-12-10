@@ -38,6 +38,7 @@
 #include "spirv.h"
 #include "utils.h"
 
+#if 0
 static VkResult create_command_pool(struct pipeline *s, int family_id)
 {
     struct glcontext *vk = s->gl;
@@ -1168,3 +1169,37 @@ int ngli_pipeline_unbind(struct pipeline *s)
 {
     return 0;
 }
+#else
+int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pipeline_params *params)
+{
+    return 0;
+}
+
+int ngli_pipeline_get_uniform_index(struct pipeline *s, const char *name)
+{
+    return 0;
+}
+
+int ngli_pipeline_get_texture_index(struct pipeline *s, const char *name)
+{
+    return 0;
+}
+
+int ngli_pipeline_update_uniform(struct pipeline *s, int index, const void *value)
+{
+    return 0;
+}
+
+int ngli_pipeline_update_texture(struct pipeline *s, int index, struct texture *texture)
+{
+    return 0;
+}
+
+void ngli_pipeline_exec(struct pipeline *s)
+{
+}
+
+void ngli_pipeline_reset(struct pipeline *s)
+{
+}
+#endif

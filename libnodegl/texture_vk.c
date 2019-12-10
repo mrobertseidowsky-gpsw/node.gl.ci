@@ -27,6 +27,7 @@
 #include "glincludes.h"
 #include "glcontext.h"
 #include "texture.h"
+#include "nodes.h"
 
 static const GLint vk_filter_map[NGLI_NB_FILTER] = {
     [NGLI_FILTER_NEAREST] = VK_FILTER_NEAREST,
@@ -141,13 +142,13 @@ static VkResult create_image(struct glcontext *vk, uint32_t width, uint32_t heig
 static VkResult transition_image_layout(struct texture *s, VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
 
 int ngli_texture_init(struct texture *s,
-                      struct glcontext *gl,
+                      struct ngl_ctx *ctx,
                       const struct texture_params *params)
 {
-    s->gl = gl;
+    s->ctx = ctx;
     s->params = *params;
 
-    struct glcontext *vk = gl;
+    struct glcontext *vk = s->ctx->glcontext;
     s->image_size = s->params.width * s->params.height * 4;
 
     VkCommandPoolCreateInfo command_pool_create_info = {
@@ -222,7 +223,7 @@ int ngli_texture_match_dimensions(const struct texture *s, int width, int height
 
 static VkCommandBuffer begin_single_time_command(struct texture *s)
 {
-    struct glcontext *vk = s->gl;
+    struct glcontext *vk = s->ctx->glcontext;
 
     VkCommandBufferAllocateInfo alloc_info = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -246,7 +247,7 @@ static VkCommandBuffer begin_single_time_command(struct texture *s)
 
 static VkResult end_single_command(struct texture *s, VkCommandBuffer command_buffer)
 {
-    struct glcontext *vk = s->gl;
+    struct glcontext *vk = s->ctx->glcontext;
 
     vkEndCommandBuffer(command_buffer);
 
@@ -382,7 +383,7 @@ static VkResult transition_image_layout(struct texture *s, VkImage image, VkForm
 
 int ngli_texture_upload(struct texture *s, const uint8_t *data, int linesize)
 {
-    struct glcontext *gl = s->gl;
+    struct glcontext *gl = s->ctx->glcontext;
     const struct texture_params *params = &s->params;
 
     /* texture with external storage (including wrapped textures and render
@@ -417,11 +418,11 @@ int ngli_texture_generate_mipmap(struct texture *s)
 
 void ngli_texture_reset(struct texture *s)
 {
-    struct glcontext *gl = s->gl;
+    struct glcontext *gl = s->ctx->glcontext;
     if (!gl)
         return;
 
-    struct glcontext *vk = s->gl;
+    struct glcontext *vk = s->ctx->glcontext;
 
     vkDestroySampler(vk->device, s->image_sampler, NULL);
     vkDestroyImageView(vk->device, s->image_view, NULL);

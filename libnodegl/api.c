@@ -47,6 +47,7 @@
 
 extern const struct backend ngli_backend_gl;
 extern const struct backend ngli_backend_gles;
+extern const struct backend ngli_backend_vk;
 
 static const struct backend *backend_map[] = {
 #ifdef VULKAN_BACKEND

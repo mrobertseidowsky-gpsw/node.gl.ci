@@ -24,6 +24,8 @@
 
 #include "glincludes.h"
 #include "hmap.h"
+#include <shaderc/shaderc.h>
+#include <vulkan/vulkan.h>
 
 #define MAX_ID_LEN 128
 
@@ -56,11 +58,12 @@ struct program {
 
 #ifdef VULKAN_BACKEND
     struct program_shader shaders[NGLI_PROGRAM_SHADER_NB];
-#else
+#endif
     struct hmap *uniforms;
     struct hmap *attributes;
     struct hmap *buffer_blocks;
 
+#ifndef VULKAN_BACKEND
     GLuint id;
 #endif
 };

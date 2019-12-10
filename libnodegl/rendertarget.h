@@ -23,7 +23,6 @@
 #define RENDERTARGET_H
 
 #include "darray.h"
-#include "glcontext.h"
 #include "texture.h"
 
 struct rendertarget_params {

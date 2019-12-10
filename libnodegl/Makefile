@@ -63,7 +63,6 @@ LIB_PCNAME   = $(LIB_BASENAME).pc
 LIB_OBJS = animation.o              \
            api.o                    \
            bstr.o                   \
-           buffer.o                 \
            colorconv.o              \
            darray.o                 \
            default_shaders.o        \
@@ -114,8 +113,6 @@ LIB_OBJS = animation.o              \
            nodes.o                  \
            params.o                 \
            pass.o                   \
-           pipeline.o               \
-           program.o                \
            program_reflection.o     \
            serialize.o              \
            spirv.o                  \
@@ -132,6 +129,7 @@ LIB_OBJS += backend_vk.o            \
             buffer_vk.o             \
             gctx_vk.o               \
             glstate_vk.o            \
+            hwconv_vk.o             \
             pipeline_vk.o           \
             program_vk.o            \
             texture_vk.o            \

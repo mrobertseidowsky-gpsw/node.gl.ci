@@ -22,6 +22,7 @@
 #ifndef GLCONTEXT_H
 #define GLCONTEXT_H
 
+#include <GL/glcorearb.h>
 #include <stdlib.h>
 
 #ifdef VULKAN_BACKEND
@@ -168,7 +169,9 @@ struct glcontext_class {
     void* (*get_proc_address)(struct glcontext *glcontext, const char *name);
     uintptr_t (*get_display)(struct glcontext *glcontext);
     uintptr_t (*get_handle)(struct glcontext *glcontext);
+#ifndef VULKAN_BACKEND
     GLuint (*get_default_framebuffer)(struct glcontext *glcontext);
+#endif
     void (*uninit)(struct glcontext *glcontext);
     size_t priv_size;
 };
