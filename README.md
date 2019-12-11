@@ -1,7 +1,20 @@
 
-![GitHub Actions status | mrobertseidowsky-gpsw/node.gl.ci](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/.github/workflows/ci_linux.yml/badge.svg?master)
+![Badge Linux](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/.github/workflows/ci_linux.yml/badge.svg?master)
 
-![GitHub Actions status | mrobertseidowsky-gpsw/node.gl.ci](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/.github/workflows/ci_mac.yml/badge.svg?master)
+![Bage Mac](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/.github/workflows/ci_mac.yml/badge.svg?master)
+
+ 
+https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/ci_linux.yml/badge.svg.
+
+https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/ci_linux.yml/badge.svg
+
+https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/ci_linux/badge.svg.
+
+https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/ci_linux/badge.svg
+
+
+[![Build Status](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/ci_linux.yml/badge.svg)](https://github.com//mrobertseidowsky-gpsw/nodel.gl.ci/actions)
+
 
 node.gl
 =======
