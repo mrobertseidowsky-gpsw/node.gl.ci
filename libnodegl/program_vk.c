@@ -26,7 +26,7 @@
 #include "memory.h"
 #include "nodes.h"
 #include "program.h"
-#include "spirv.h"
+#include "program_reflection.h"
 
 int ngli_program_init(struct program *s, struct ngl_ctx *ctx, const char *vertex, const char *fragment, const char *compute)
 {
@@ -42,6 +42,19 @@ int ngli_program_init(struct program *s, struct ngl_ctx *ctx, const char *vertex
     struct glcontext *vk = ctx->glcontext;
 
     s->ctx = ctx;
+
+    struct program_reflection r = {0};
+    int ret = ngli_program_reflection_init(&r, vertex, fragment, compute);
+    if (ret < 0)
+        return ret;
+    ngli_program_reflection_dump(&r);
+    s->uniforms = r.uniforms;
+    r.uniforms = NULL;
+    s->attributes = r.inputs;
+    r.inputs = NULL;
+    s->buffer_blocks = r.blocks;
+    r.blocks = NULL;
+    ngli_program_reflection_reset(&r);
 
     for (int i = 0; i < NGLI_ARRAY_NB(s->shaders); i++) {
         if (!shaders[i].src)
@@ -64,9 +77,6 @@ int ngli_program_init(struct program *s, struct ngl_ctx *ctx, const char *vertex
         };
         VkResult ret = vkCreateShaderModule(vk->device, &shader_module_create_info, NULL, &shader->vkmodule);
         if (ret != VK_SUCCESS)
-            return -1;
-        shader->probe = ngli_spirv_probe(code, code_size);
-        if (!shader->probe)
             return -1;
     }
 

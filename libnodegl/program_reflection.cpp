@@ -33,6 +33,7 @@ extern "C" {
 #include "program.h"
 #include "type.h"
 #include "time.h"
+#include "glincludes.h"
 }
 
 class GLslangInitializer {
@@ -160,6 +161,7 @@ static int add_shader(glslang::TProgram & program, EShLanguage stage, const char
 {
     glslang::TShader *shader = new glslang::TShader(stage);
     shader->setStrings(&text, 1);
+    shader->setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_0);
 
     EShMessages messages = EShMsgDefault;
     if (!shader->parse(&default_ressources, 100, false, messages)) {
@@ -211,6 +213,7 @@ static void copy_reflection_object(struct program_variable_info *dst, const glsl
 {
     dst->type    = get_type(src->glDefineType);
     dst->size    = src->size;
+    dst->location = -1;
     dst->binding = src->getBinding();
 
     /* stages */
@@ -226,6 +229,11 @@ static void copy_reflection_object(struct program_variable_info *dst, const glsl
     const glslang::TType *type = src->getType();
     if (type) {
         const glslang::TQualifier & qualifier = type->getQualifier();
+        if (qualifier.hasLayout()) {
+            if (qualifier.hasAnyLocation()) {
+                dst->location = qualifier.layoutLocation;
+            }
+        }
         if (qualifier.readonly)
             dst->access = NGLI_ACCESS_READ_BIT;
         else if (qualifier.writeonly)
@@ -377,8 +385,8 @@ void ngli_program_reflection_dump(struct program_reflection *s)
         const struct hmap_entry *entry = NULL;
         while ((entry = ngli_hmap_next(map, entry)) != NULL) {
           struct program_variable_info *info = (struct program_variable_info *)entry->data;
-          LOG(ERROR, "\tname=%s size=%d type=0x%x binding=%d stages=0x%x access=0x%x",
-              entry->key, info->size, info->type, info->binding, info->stages, info->access);
+          LOG(ERROR, "\tname=%s size=%d type=0x%x location=%d binding=%d stages=0x%x access=0x%x",
+              entry->key, info->size, info->type, info->location, info->binding, info->stages, info->access);
         }
     }
 }
