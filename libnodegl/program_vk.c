@@ -90,7 +90,6 @@ void ngli_program_reset(struct program *s)
     struct glcontext *vk = s->ctx->glcontext;
     for (int i = 0; i < NGLI_ARRAY_NB(s->shaders); i++) {
         struct program_shader *shader = &s->shaders[i];
-        ngli_spirv_freep(&shader->probe);
         vkDestroyShaderModule(vk->device, shader->vkmodule, NULL);
         shaderc_result_release(shader->result);
     }

@@ -38,7 +38,10 @@ struct rendertarget {
     int height;
     int nb_color_attachments;
 
-#ifndef VULKAN_BACKEND
+#ifdef VULKAN_BACKEND
+    VkFramebuffer framebuffer;
+    VkRenderPass render_pass;
+#else
     GLuint id;
     GLuint prev_id;
     GLenum *draw_buffers;
