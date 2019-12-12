@@ -33,6 +33,7 @@
 #include "memory.h"
 #include "nodegl.h"
 #include "nodes.h"
+#include "type.h"
 #include "texture.h"
 #include "topology.h"
 #include "spirv.h"
@@ -1171,22 +1172,73 @@ int ngli_pipeline_unbind(struct pipeline *s)
 }
 #else
 
-static VkResult create_command_pool(struct pipeline *s)
+struct attribute_pair {
+    int count;
+    int location;
+    struct pipeline_attribute attribute;
+};
+
+static int build_attribute_pairs(struct pipeline *s, const struct pipeline_params *params)
 {
-    struct glcontext *vk = s->ctx->glcontext;
+    struct ngl_ctx *ctx = s->ctx;
+    struct glcontext *gl = ctx->glcontext;
+    const struct program *program = s->program;
 
-    VkCommandPoolCreateInfo command_pool_create_info = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .queueFamilyIndex = vk->queue_family_graphics_id,
-        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, // XXX
-    };
+    if (!program->attributes)
+        return 0;
 
-    return vkCreateCommandPool(vk->device, &command_pool_create_info, NULL, &s->command_pool);
+    for (int i = 0; i < params->nb_attributes; i++) {
+        const struct pipeline_attribute *attribute = &params->attributes[i];
+        const struct program_variable_info *info = ngli_hmap_get(program->attributes, attribute->name);
+        if (!info || info->location < 0)
+            continue;
+
+        if (attribute->count > 4) {
+            LOG(ERROR, "attribute count could not exceed 4");
+            return NGL_ERROR_INVALID_ARG;
+        }
+        const int type_count = info->type == NGLI_TYPE_MAT4 ? 4 : 1;
+        const int attribute_count = NGLI_MAX(NGLI_MIN(attribute->count, type_count), 1);
+
+        if (attribute->rate > 0 && !(gl->features & NGLI_FEATURE_INSTANCED_ARRAY)) {
+            LOG(ERROR, "context does not support instanced arrays");
+            return NGL_ERROR_UNSUPPORTED;
+        }
+
+        struct attribute_pair pair = {
+            .count     = attribute_count,
+            .location  = info->location,
+            .attribute = *attribute,
+        };
+        if (!ngli_darray_push(&s->attribute_pairs, &pair))
+            return NGL_ERROR_MEMORY;
+    }
+
+    return 0;
 }
 
 
+static int pipeline_graphics_init(struct pipeline *s, const struct pipeline_params *params)
+{
+    struct ngl_ctx *ctx = s->ctx;
+    struct glcontext *gl = ctx->glcontext;
+    struct pipeline_graphics *graphics = &s->graphics;
+
+    int ret = build_attribute_pairs(s, params);
+    if (ret < 0)
+        return ret;
+
+    return 0;
+}
+
+static int pipeline_compute_init(struct pipeline *s)
+{
+    return 0;
+}
+
 int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pipeline_params *params)
 {
+    int ret;
     LOG(ERROR, "stub");
 
     s->ctx      = ctx;
@@ -1194,6 +1246,18 @@ int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pip
     s->graphics = params->graphics;
     s->compute  = params->compute;
     s->program  = params->program;
+
+    if (params->type == NGLI_PIPELINE_TYPE_GRAPHICS) {
+        ret = pipeline_graphics_init(s, params);
+        if (ret < 0)
+            return ret;
+    } else if (params->type == NGLI_PIPELINE_TYPE_COMPUTE) {
+        ret = pipeline_compute_init(s);
+        if (ret < 0)
+            return ret;
+    } else {
+        ngli_assert(0);
+    }
 
     return 0;
 #if 0

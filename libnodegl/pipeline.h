@@ -126,9 +126,6 @@ struct pipeline {
     VkCommandBuffer *command_buffers;
     int nb_command_buffers; // XXX drop for vk->nb_framebuffers
 
-    int queue_family_id;
-    VkCommandPool command_pool;
-
     struct darray binding_descriptors;
     struct darray constant_descriptors;
 
