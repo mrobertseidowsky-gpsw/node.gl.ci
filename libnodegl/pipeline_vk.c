@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <vulkan/vulkan_core.h>
 
 #include "buffer.h"
 #include "glincludes.h"
@@ -1181,11 +1182,15 @@ struct attribute_pair {
 static int build_attribute_pairs(struct pipeline *s, const struct pipeline_params *params)
 {
     struct ngl_ctx *ctx = s->ctx;
-    struct glcontext *gl = ctx->glcontext;
     const struct program *program = s->program;
 
     if (!program->attributes)
         return 0;
+
+    struct hmap_entry *entry = NULL;
+    while ((entry = ngli_hmap_next(program->attributes, entry)) != NULL) {
+    }
+
 
     for (int i = 0; i < params->nb_attributes; i++) {
         const struct pipeline_attribute *attribute = &params->attributes[i];
@@ -1199,11 +1204,6 @@ static int build_attribute_pairs(struct pipeline *s, const struct pipeline_param
         }
         const int type_count = info->type == NGLI_TYPE_MAT4 ? 4 : 1;
         const int attribute_count = NGLI_MAX(NGLI_MIN(attribute->count, type_count), 1);
-
-        if (attribute->rate > 0 && !(gl->features & NGLI_FEATURE_INSTANCED_ARRAY)) {
-            LOG(ERROR, "context does not support instanced arrays");
-            return NGL_ERROR_UNSUPPORTED;
-        }
 
         struct attribute_pair pair = {
             .count     = attribute_count,
@@ -1221,7 +1221,6 @@ static int build_attribute_pairs(struct pipeline *s, const struct pipeline_param
 static int pipeline_graphics_init(struct pipeline *s, const struct pipeline_params *params)
 {
     struct ngl_ctx *ctx = s->ctx;
-    struct glcontext *gl = ctx->glcontext;
     struct pipeline_graphics *graphics = &s->graphics;
 
     int ret = build_attribute_pairs(s, params);
