@@ -1170,10 +1170,61 @@ int ngli_pipeline_unbind(struct pipeline *s)
     return 0;
 }
 #else
+
+static VkResult create_command_pool(struct pipeline *s)
+{
+    struct glcontext *vk = s->ctx->glcontext;
+
+    VkCommandPoolCreateInfo command_pool_create_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .queueFamilyIndex = vk->queue_family_graphics_id,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT, // XXX
+    };
+
+    return vkCreateCommandPool(vk->device, &command_pool_create_info, NULL, &s->command_pool);
+}
+
+
 int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pipeline_params *params)
 {
     LOG(ERROR, "stub");
+
+    s->ctx      = ctx;
+    s->type     = params->type;
+    s->graphics = params->graphics;
+    s->compute  = params->compute;
+    s->program  = params->program;
+
     return 0;
+#if 0
+    ngli_darray_init(&s->uniform_pairs, sizeof(struct uniform_pair), 0);
+    ngli_darray_init(&s->texture_pairs, sizeof(struct texture_pair), 0);
+    ngli_darray_init(&s->buffer_pairs, sizeof(struct buffer_pair), 0);
+    ngli_darray_init(&s->attribute_pairs, sizeof(struct attribute_pair), 0);
+
+    int ret;
+    if ((ret = build_uniform_pairs(s, params)) < 0 ||
+        (ret = build_texture_pairs(s, params)) < 0 ||
+        (ret = build_buffer_pairs(s, params)) < 0)
+        return ret;
+
+    if (params->type == NGLI_PIPELINE_TYPE_GRAPHICS) {
+        ret = pipeline_graphics_init(s, params);
+        if (ret < 0)
+            return ret;
+    } else if (params->type == NGLI_PIPELINE_TYPE_COMPUTE) {
+        ret = pipeline_compute_init(s);
+        if (ret < 0)
+            return ret;
+    } else {
+        ngli_assert(0);
+    }
+
+    return 0;
+
+
+    return 0;
+#endif
 }
 
 int ngli_pipeline_get_uniform_index(struct pipeline *s, const char *name)
