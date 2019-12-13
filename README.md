@@ -1,34 +1,5 @@
-
-#[![npm](https://img.shields.io/npm/v/pwa-asset-generator?color=brightgreen)](https://www.npmjs.com/package/pwa-asset-generator)
-
-#[![node](https://img.shields.io/node/v/pwa-asset-generator)](https://www.npmjs.com/package/pwa-asset-generator)
-
-#[![Build Status](https://github.com/onderceylan/pwa-asset-generator/workflows/CI/badge.svg)](https://github.com/onderceylan/pwa-asset-generator/actions?workflow=CI)
-
-#[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
-
-#[![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-brightgreen.svg)](https://github.com/semantic-release/semantic-release)
-
 [![Actions Status](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/Continuous%20Integration%20Pipeline/badge.svg)](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/actions?query=workflow%3AContinuous%20Integration%20Pipeline)
-
-[![Actions Status](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/Continuous%20Integration%20Pipeline/badge.svg)](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/actions?query=workflow%3AContinuous%20Integration%20Pipeline)
-
-
-![Badge Linux](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/.github/workflows/ci_linux.yml/badge.svg?master)
-
-![Bage Mac](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/.github/workflows/ci_mac.yml/badge.svg?master)
-
-https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/ci_linux.yml/badge.svg.
-
-https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/ci_linux.yml/badge.svg
-
-https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/ci_linux/badge.svg.
-
-https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/ci_linux/badge.svg
-
-
-[![Build Status](https://github.com/mrobertseidowsky-gpsw/node.gl.ci/workflows/ci_linux.yml/badge.svg)](https://github.com//mrobertseidowsky-gpsw/nodel.gl.ci/actions)
-
+  
 
 node.gl
 =======
