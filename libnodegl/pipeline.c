@@ -37,23 +37,9 @@ struct uniform_pair {
     set_uniform_func set;
 };
 
-struct texture_pair {
-    int type;
-    GLuint location;
-    GLuint binding;
-    struct pipeline_texture texture;
-};
-
 struct buffer_pair {
     GLuint type;
-    GLuint binding;
     struct pipeline_buffer buffer;
-};
-
-struct attribute_pair {
-    int count;
-    GLuint location;
-    struct pipeline_attribute attribute;
 };
 
 static void set_uniform_1i(struct glcontext *gl, GLint location, int count, const void *data)
@@ -155,33 +141,24 @@ static int build_texture_pairs(struct pipeline *s, const struct pipeline_params 
 
     for (int i = 0; i < params->nb_textures; i++) {
         const struct pipeline_texture *texture = &params->textures[i];
-        const struct program_variable_info *info = ngli_hmap_get(program->uniforms, texture->name);
-        if (!info)
-            continue;
 
-        if (info->type == NGLI_TYPE_IMAGE_2D) {
+        if (texture->type == NGLI_TYPE_IMAGE_2D) {
             struct ngl_ctx *ctx =s->ctx;
             struct glcontext *gl = ctx->glcontext;
 
             int max_nb_textures = NGLI_MIN(gl->max_texture_image_units, sizeof(s->used_texture_units) * 8);
-            if (info->binding >= max_nb_textures) {
+            if (texture->binding >= max_nb_textures) {
                 LOG(ERROR, "maximum number (%d) of texture unit reached", max_nb_textures);
                 return NGL_ERROR_LIMIT_EXCEEDED;
             }
-            if (s->used_texture_units & (1ULL << info->binding)) {
-                LOG(ERROR, "texture unit %d is already used by another image", info->binding);
+            if (s->used_texture_units & (1ULL << texture->binding)) {
+                LOG(ERROR, "texture unit %d is already used by another image", texture->binding);
                 return NGL_ERROR_INVALID_DATA;
             }
-            s->used_texture_units |= 1ULL << info->binding;
+            s->used_texture_units |= 1ULL << texture->binding;
         }
 
-        struct texture_pair pair = {
-            .type     = info->type,
-            .location = info->location,
-            .binding  = info->binding,
-            .texture  = *texture,
-        };
-        if (!ngli_darray_push(&s->texture_pairs, &pair))
+        if (!ngli_darray_push(&s->texture_pairs, texture))
             return NGL_ERROR_MEMORY;
     }
 
@@ -203,13 +180,12 @@ static int acquire_next_available_texture_unit(uint64_t *texture_units)
 static void set_textures(struct pipeline *s, struct glcontext *gl)
 {
     uint64_t texture_units = s->used_texture_units;
-    const struct texture_pair *pairs = ngli_darray_data(&s->texture_pairs);
+    const struct pipeline_texture *pairs = ngli_darray_data(&s->texture_pairs);
     for (int i = 0; i < ngli_darray_count(&s->texture_pairs); i++) {
-        const struct texture_pair *pair = &pairs[i];
-        const struct pipeline_texture *pipeline_texture = &pair->texture;
+        const struct pipeline_texture *pipeline_texture = &pairs[i];
         const struct texture *texture = pipeline_texture->texture;
 
-        if (pair->type == NGLI_TYPE_IMAGE_2D) {
+        if (pipeline_texture->type == NGLI_TYPE_IMAGE_2D) {
             GLuint texture_id = 0;
             GLenum access = GL_READ_WRITE;
             GLenum internal_format = GL_RGBA8;
@@ -219,12 +195,12 @@ static void set_textures(struct pipeline *s, struct glcontext *gl)
                 access = ngli_texture_get_gl_access(params->access);
                 internal_format = texture->internal_format;
             }
-            ngli_glBindImageTexture(gl, pair->binding, texture_id, 0, GL_FALSE, 0, access, internal_format);
+            ngli_glBindImageTexture(gl, pipeline_texture->binding, texture_id, 0, GL_FALSE, 0, access, internal_format);
         } else {
             const int texture_index = acquire_next_available_texture_unit(&texture_units);
             if (texture_index < 0)
                 return;
-            ngli_glUniform1i(gl, pair->location, texture_index);
+            ngli_glUniform1i(gl, pipeline_texture->location, texture_index);
             ngli_glActiveTexture(gl, GL_TEXTURE0 + texture_index);
             if (texture) {
                 ngli_glBindTexture(gl, texture->target, texture->id);
@@ -246,7 +222,7 @@ static void set_buffers(struct pipeline *s, struct glcontext *gl)
         const struct buffer_pair *pair = &pairs[i];
         const struct pipeline_buffer *pipeline_buffer = &pair->buffer;
         const struct buffer *buffer = pipeline_buffer->buffer;
-        ngli_glBindBufferBase(gl, pair->type, pair->binding, buffer->id);
+        ngli_glBindBufferBase(gl, pair->type, pipeline_buffer->binding, buffer->id);
     }
 }
 
@@ -260,13 +236,10 @@ static int build_buffer_pairs(struct pipeline *s, const struct pipeline_params *
     for (int i = 0; i < params->nb_buffers; i++) {
         const struct pipeline_buffer *pipeline_buffer = &params->buffers[i];
         const struct buffer *buffer = pipeline_buffer->buffer;
-        const struct program_variable_info *info = ngli_hmap_get(program->buffer_blocks, pipeline_buffer->name);
-        if (!info)
-            continue;
 
         struct ngl_ctx *ctx = s->ctx;
         struct glcontext *gl = ctx->glcontext;
-        if (info->type == NGLI_TYPE_UNIFORM_BUFFER &&
+        if (pipeline_buffer->type == NGLI_TYPE_UNIFORM_BUFFER &&
             buffer->size > gl->max_uniform_block_size) {
             LOG(ERROR, "buffer %s size (%d) exceeds max uniform block size (%d)",
                 pipeline_buffer->name, buffer->size, gl->max_uniform_block_size);
@@ -274,8 +247,7 @@ static int build_buffer_pairs(struct pipeline *s, const struct pipeline_params *
         }
 
         struct buffer_pair pair = {
-            .binding = info->binding,
-            .type    = ngli_type_get_gl_type(info->type),
+            .type    = ngli_type_get_gl_type(pipeline_buffer->type),
             .buffer  = *pipeline_buffer,
         };
         if (!ngli_darray_push(&s->buffer_pairs, &pair))
@@ -287,14 +259,13 @@ static int build_buffer_pairs(struct pipeline *s, const struct pipeline_params *
 
 static void set_vertex_attribs(const struct pipeline *s, struct glcontext *gl)
 {
-    const struct attribute_pair *pairs = ngli_darray_data(&s->attribute_pairs);
+    const struct pipeline_attribute *attributes = ngli_darray_data(&s->attribute_pairs);
     for (int i = 0; i < ngli_darray_count(&s->attribute_pairs); i++) {
-        const struct attribute_pair *pair = &pairs[i];
-        const int count = pair->count;
-        const GLuint location = pair->location;
-        const struct pipeline_attribute *attribute = &pair->attribute;
+        const struct pipeline_attribute *attribute = &attributes[i];
         const struct buffer *buffer = attribute->buffer;
+        const GLuint location = attribute->location;
         const GLuint size = ngli_format_get_nb_comp(attribute->format);
+        const int count = attribute->count;
         const GLint stride = attribute->stride * count;
 
         for (int i = 0; i < count; i++) {
@@ -309,11 +280,11 @@ static void set_vertex_attribs(const struct pipeline *s, struct glcontext *gl)
 
 static void reset_vertex_attribs(const struct pipeline *s, struct glcontext *gl)
 {
-    const struct attribute_pair *pairs = ngli_darray_data(&s->attribute_pairs);
+    const struct pipeline_attribute *attributes = ngli_darray_data(&s->attribute_pairs);
     for (int i = 0; i < ngli_darray_count(&s->attribute_pairs); i++) {
-        const struct attribute_pair *pair = &pairs[i];
-        const int count = pair->count;
-        const GLuint location = pair->location;
+        const struct pipeline_attribute *attribute = &attributes[i];
+        const int count = attribute->count;
+        const GLuint location = attribute->location;
         for (int i = 0; i < count; i++) {
             ngli_glDisableVertexAttribArray(gl, location + i);
             if (gl->features & NGLI_FEATURE_INSTANCED_ARRAY)
@@ -326,35 +297,21 @@ static int build_attribute_pairs(struct pipeline *s, const struct pipeline_param
 {
     struct ngl_ctx *ctx = s->ctx;
     struct glcontext *gl = ctx->glcontext;
-    const struct program *program = s->program;
-
-    if (!program->attributes)
-        return 0;
 
     for (int i = 0; i < params->nb_attributes; i++) {
         const struct pipeline_attribute *attribute = &params->attributes[i];
-        const struct program_variable_info *info = ngli_hmap_get(program->attributes, attribute->name);
-        if (!info)
-            continue;
 
         if (attribute->count > 4) {
             LOG(ERROR, "attribute count could not exceed 4");
             return NGL_ERROR_INVALID_ARG;
         }
-        const int type_count = info->type == NGLI_TYPE_MAT4 ? 4 : 1;
-        const int attribute_count = NGLI_MAX(NGLI_MIN(attribute->count, type_count), 1);
 
         if (attribute->rate > 0 && !(gl->features & NGLI_FEATURE_INSTANCED_ARRAY)) {
             LOG(ERROR, "context does not support instanced arrays");
             return NGL_ERROR_UNSUPPORTED;
         }
 
-        struct attribute_pair pair = {
-            .count     = attribute_count,
-            .location  = info->location,
-            .attribute = *attribute,
-        };
-        if (!ngli_darray_push(&s->attribute_pairs, &pair))
+        if (!ngli_darray_push(&s->attribute_pairs, attribute))
             return NGL_ERROR_MEMORY;
     }
 
@@ -518,9 +475,9 @@ int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pip
     s->program  = params->program;
 
     ngli_darray_init(&s->uniform_pairs, sizeof(struct uniform_pair), 0);
-    ngli_darray_init(&s->texture_pairs, sizeof(struct texture_pair), 0);
+    ngli_darray_init(&s->texture_pairs, sizeof(struct pipeline_texture), 0);
     ngli_darray_init(&s->buffer_pairs, sizeof(struct buffer_pair), 0);
-    ngli_darray_init(&s->attribute_pairs, sizeof(struct attribute_pair), 0);
+    ngli_darray_init(&s->attribute_pairs, sizeof(struct pipeline_attribute), 0);
 
     int ret;
     if ((ret = build_uniform_pairs(s, params)) < 0 ||
@@ -557,10 +514,9 @@ int ngli_pipeline_get_uniform_index(struct pipeline *s, const char *name)
 
 int ngli_pipeline_get_texture_index(struct pipeline *s, const char *name)
 {
-    struct texture_pair *pairs = ngli_darray_data(&s->texture_pairs);
+    struct pipeline_texture *pairs = ngli_darray_data(&s->texture_pairs);
     for (int i = 0; i < ngli_darray_count(&s->texture_pairs); i++) {
-        struct texture_pair *pair = &pairs[i];
-        struct pipeline_texture *pipeline_texture = &pair->texture;
+        struct pipeline_texture *pipeline_texture = &pairs[i];
         if (!strcmp(pipeline_texture->name, name))
             return i;
     }
@@ -593,8 +549,8 @@ int ngli_pipeline_update_texture(struct pipeline *s, int index, struct texture *
         return NGL_ERROR_NOT_FOUND;
 
     ngli_assert(index < ngli_darray_count(&s->texture_pairs));
-    struct texture_pair *pairs = ngli_darray_data(&s->texture_pairs);
-    struct pipeline_texture *pipeline_texture = &pairs[index].texture;
+    struct pipeline_texture *pairs = ngli_darray_data(&s->texture_pairs);
+    struct pipeline_texture *pipeline_texture = &pairs[index];
     pipeline_texture->texture = texture;
 
     return 0;
