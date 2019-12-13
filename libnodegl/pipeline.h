@@ -44,12 +44,14 @@ struct pipeline_texture {
 
 struct pipeline_buffer {
     char name[MAX_ID_LEN];
+    int binding;
+    int type;
     struct buffer *buffer;
 };
 
 struct pipeline_attribute {
-    int location;
     char name[MAX_ID_LEN];
+    int location;
     int format;
     int count;
     int stride;

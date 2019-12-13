@@ -297,7 +297,8 @@ static int register_block(struct pass *s, const char *name, struct ngl_node *blo
         return 0;
 
     struct hmap *infos = s->pipeline_program->buffer_blocks;
-    if (!ngli_hmap_get(infos, name)) {
+    struct blockprograminfo *info = ngli_hmap_get(infos, name);
+    if (!info) {
         struct pass_params *params = &s->params;
         LOG(WARNING, "block %s attached to pipeline %s not found in shader", name, params->label);
         return 0;
@@ -306,6 +307,8 @@ static int register_block(struct pass *s, const char *name, struct ngl_node *blo
     struct block_priv *block_priv = block->priv_data;
     struct buffer *buffer = &block_priv->buffer;
     struct pipeline_buffer pipeline_buffer = {
+        .binding = info->binding,
+        .type = info->type,
         .buffer = buffer,
     };
     snprintf(pipeline_buffer.name, sizeof(pipeline_buffer.name), "%s", name);

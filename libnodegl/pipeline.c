@@ -46,7 +46,6 @@ struct texture_pair {
 
 struct buffer_pair {
     GLuint type;
-    GLuint binding;
     struct pipeline_buffer buffer;
 };
 
@@ -240,7 +239,7 @@ static void set_buffers(struct pipeline *s, struct glcontext *gl)
         const struct buffer_pair *pair = &pairs[i];
         const struct pipeline_buffer *pipeline_buffer = &pair->buffer;
         const struct buffer *buffer = pipeline_buffer->buffer;
-        ngli_glBindBufferBase(gl, pair->type, pair->binding, buffer->id);
+        ngli_glBindBufferBase(gl, pair->type, pipeline_buffer->binding, buffer->id);
     }
 }
 
@@ -254,13 +253,10 @@ static int build_buffer_pairs(struct pipeline *s, const struct pipeline_params *
     for (int i = 0; i < params->nb_buffers; i++) {
         const struct pipeline_buffer *pipeline_buffer = &params->buffers[i];
         const struct buffer *buffer = pipeline_buffer->buffer;
-        const struct blockprograminfo *info = ngli_hmap_get(program->buffer_blocks, pipeline_buffer->name);
-        if (!info)
-            continue;
 
         struct ngl_ctx *ctx = s->ctx;
         struct glcontext *gl = ctx->glcontext;
-        if (info->type == NGLI_TYPE_UNIFORM_BUFFER &&
+        if (pipeline_buffer->type == NGLI_TYPE_UNIFORM_BUFFER &&
             buffer->size > gl->max_uniform_block_size) {
             LOG(ERROR, "buffer %s size (%d) exceeds max uniform block size (%d)",
                 pipeline_buffer->name, buffer->size, gl->max_uniform_block_size);
@@ -268,8 +264,7 @@ static int build_buffer_pairs(struct pipeline *s, const struct pipeline_params *
         }
 
         struct buffer_pair pair = {
-            .binding = info->binding,
-            .type    = ngli_type_get_gl_type(info->type),
+            .type    = ngli_type_get_gl_type(pipeline_buffer->type),
             .buffer  = *pipeline_buffer,
         };
         if (!ngli_darray_push(&s->buffer_pairs, &pair))
