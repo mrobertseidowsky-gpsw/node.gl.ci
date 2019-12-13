@@ -50,12 +50,6 @@ struct buffer_pair {
     struct pipeline_buffer buffer;
 };
 
-struct attribute_pair {
-    int count;
-    GLuint location;
-    struct pipeline_attribute attribute;
-};
-
 static void set_uniform_1i(struct glcontext *gl, GLint location, int count, const void *data)
 {
     ngli_glUniform1iv(gl, location, count, data);
@@ -287,14 +281,13 @@ static int build_buffer_pairs(struct pipeline *s, const struct pipeline_params *
 
 static void set_vertex_attribs(const struct pipeline *s, struct glcontext *gl)
 {
-    const struct attribute_pair *pairs = ngli_darray_data(&s->attribute_pairs);
+    const struct pipeline_attribute *attributes = ngli_darray_data(&s->attribute_pairs);
     for (int i = 0; i < ngli_darray_count(&s->attribute_pairs); i++) {
-        const struct attribute_pair *pair = &pairs[i];
-        const int count = pair->count;
-        const GLuint location = pair->location;
-        const struct pipeline_attribute *attribute = &pair->attribute;
+        const struct pipeline_attribute *attribute = &attributes[i];
         const struct buffer *buffer = attribute->buffer;
+        const GLuint location = attribute->location;
         const GLuint size = ngli_format_get_nb_comp(attribute->format);
+        const int count = attribute->count;
         const GLint stride = attribute->stride * count;
 
         for (int i = 0; i < count; i++) {
@@ -309,11 +302,11 @@ static void set_vertex_attribs(const struct pipeline *s, struct glcontext *gl)
 
 static void reset_vertex_attribs(const struct pipeline *s, struct glcontext *gl)
 {
-    const struct attribute_pair *pairs = ngli_darray_data(&s->attribute_pairs);
+    const struct pipeline_attribute *attributes = ngli_darray_data(&s->attribute_pairs);
     for (int i = 0; i < ngli_darray_count(&s->attribute_pairs); i++) {
-        const struct attribute_pair *pair = &pairs[i];
-        const int count = pair->count;
-        const GLuint location = pair->location;
+        const struct pipeline_attribute *attribute = &attributes[i];
+        const int count = attribute->count;
+        const GLuint location = attribute->location;
         for (int i = 0; i < count; i++) {
             ngli_glDisableVertexAttribArray(gl, location + i);
             if (gl->features & NGLI_FEATURE_INSTANCED_ARRAY)
@@ -322,39 +315,25 @@ static void reset_vertex_attribs(const struct pipeline *s, struct glcontext *gl)
     }
 }
 
-static int build_attribute_pairs(struct pipeline *s, const struct pipeline_params *params)
+static int check_attribute_pairs(struct pipeline *s, const struct pipeline_params *params)
 {
     struct ngl_ctx *ctx = s->ctx;
     struct glcontext *gl = ctx->glcontext;
-    const struct program *program = s->program;
-
-    if (!program->attributes)
-        return 0;
 
     for (int i = 0; i < params->nb_attributes; i++) {
         const struct pipeline_attribute *attribute = &params->attributes[i];
-        const struct attributeprograminfo *info = ngli_hmap_get(program->attributes, attribute->name);
-        if (!info)
-            continue;
 
         if (attribute->count > 4) {
             LOG(ERROR, "attribute count could not exceed 4");
             return NGL_ERROR_INVALID_ARG;
         }
-        const int type_count = info->type == NGLI_TYPE_MAT4 ? 4 : 1;
-        const int attribute_count = NGLI_MAX(NGLI_MIN(attribute->count, type_count), 1);
 
         if (attribute->rate > 0 && !(gl->features & NGLI_FEATURE_INSTANCED_ARRAY)) {
             LOG(ERROR, "context does not support instanced arrays");
             return NGL_ERROR_UNSUPPORTED;
         }
 
-        struct attribute_pair pair = {
-            .count     = attribute_count,
-            .location  = info->location,
-            .attribute = *attribute,
-        };
-        if (!ngli_darray_push(&s->attribute_pairs, &pair))
+        if (!ngli_darray_push(&s->attribute_pairs, attribute))
             return NGL_ERROR_MEMORY;
     }
 
@@ -464,7 +443,7 @@ static int pipeline_graphics_init(struct pipeline *s, const struct pipeline_para
         return NGL_ERROR_UNSUPPORTED;
     }
 
-    int ret = build_attribute_pairs(s, params);
+    int ret = check_attribute_pairs(s, params);
     if (ret < 0)
         return ret;
 
@@ -520,7 +499,7 @@ int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pip
     ngli_darray_init(&s->uniform_pairs, sizeof(struct uniform_pair), 0);
     ngli_darray_init(&s->texture_pairs, sizeof(struct texture_pair), 0);
     ngli_darray_init(&s->buffer_pairs, sizeof(struct buffer_pair), 0);
-    ngli_darray_init(&s->attribute_pairs, sizeof(struct attribute_pair), 0);
+    ngli_darray_init(&s->attribute_pairs, sizeof(struct pipeline_attribute), 0);
 
     int ret;
     if ((ret = build_uniform_pairs(s, params)) < 0 ||

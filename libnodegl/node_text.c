@@ -276,9 +276,15 @@ static int text_init(struct ngl_node *node)
         {.name  = "tex", .texture = &s->texture},
     };
 
+    const struct attributeprograminfo *position = ngli_hmap_get(s->program.attributes, "position");
+    ngli_assert(position);
+
+    const struct attributeprograminfo *uvcoord = ngli_hmap_get(s->program.attributes, "uvcoord");
+    ngli_assert(uvcoord);
+
     const struct pipeline_attribute attributes[] = {
-        {.name = "position", .format = NGLI_FORMAT_R32G32B32_SFLOAT, .stride = 3 * 4, .buffer = &s->vertices},
-        {.name = "uvcoord",  .format = NGLI_FORMAT_R32G32_SFLOAT,    .stride = 2 * 4, .buffer = &s->uvcoords},
+        {.name = "position", .location = position->location, .format = NGLI_FORMAT_R32G32B32_SFLOAT, .count = 1, .stride = 3 * 4, .buffer = &s->vertices},
+        {.name = "uvcoord",  .location = uvcoord->location,  .format = NGLI_FORMAT_R32G32_SFLOAT,    .count = 1, .stride = 2 * 4, .buffer = &s->uvcoords},
     };
 
     struct pipeline_params pipeline_params = {

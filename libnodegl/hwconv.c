@@ -23,6 +23,7 @@
 
 #include "buffer.h"
 #include "colorconv.h"
+#include "hmap.h"
 #include "hwconv.h"
 #include "glincludes.h"
 #include "glcontext.h"
@@ -207,8 +208,11 @@ int ngli_hwconv_init(struct hwconv *hwconv, struct ngl_ctx *ctx,
         {.name = "tex1", .texture = NULL},
     };
 
+    const struct attributeprograminfo *position = ngli_hmap_get(hwconv->program.attributes, "position");
+    ngli_assert(position);
+
     const struct pipeline_attribute attributes[] = {
-        {.name = "position", .format = NGLI_FORMAT_R32G32B32A32_SFLOAT, .stride = 4 * 4, .buffer = &hwconv->vertices},
+        {.name = "position", .location = position->location, .format = NGLI_FORMAT_R32G32B32A32_SFLOAT, .count = 1, .stride = 4 * 4, .buffer = &hwconv->vertices},
     };
 
     struct pipeline_params pipeline_params = {

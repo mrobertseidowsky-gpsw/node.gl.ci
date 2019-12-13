@@ -387,8 +387,9 @@ static int register_attribute(struct pass *s, const char *name, struct ngl_node 
     if (!attribute)
         return 0;
 
-    struct hmap *infos = s->pipeline_program->attributes;
-    if (!ngli_hmap_get(infos, name)) {
+    const struct hmap *infos = s->pipeline_program->attributes;
+    const struct attributeprograminfo *info = ngli_hmap_get(infos, name);
+    if (!info) {
         if (warn) {
             const struct pass_params *params = &s->params;
             LOG(WARNING, "attribute %s attached to pipeline %s not found in shader", name, params->label);
@@ -414,10 +415,11 @@ static int register_attribute(struct pass *s, const char *name, struct ngl_node 
     }
 
     struct pipeline_attribute pipeline_attribute = {
+        .location = info->location,
         .format = attribute_priv->data_format,
         .stride = stride,
         .offset = offset,
-        .count  = 1,
+        .count  = info->type == NGLI_TYPE_MAT4 ? 4 : 1,
         .rate   = rate,
         .buffer = buffer,
     };

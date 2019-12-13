@@ -48,6 +48,7 @@ struct pipeline_buffer {
 };
 
 struct pipeline_attribute {
+    int location;
     char name[MAX_ID_LEN];
     int format;
     int count;
