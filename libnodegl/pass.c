@@ -224,7 +224,10 @@ static int register_texture(struct pass *s, const char *name, struct ngl_node *t
 
         if (field->is_sampler_or_image) {
             struct pipeline_texture pipeline_texture = {
-                .name = {0}
+                .name = {0},
+                .type = uniform->type,
+                .location = uniform->location,
+                .binding = uniform->binding,
             };
             snprintf(pipeline_texture.name, sizeof(pipeline_texture.name), "%s", uniform_name);
             if (!ngli_darray_push(&s->pipeline_textures, &pipeline_texture))

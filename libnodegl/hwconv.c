@@ -203,10 +203,18 @@ int ngli_hwconv_init(struct hwconv *hwconv, struct ngl_ctx *ctx,
         {.name = "color_matrix",     .type = NGLI_TYPE_MAT4, .count = 1,               .data  = hwconv->src_color_matrix},
     };
 
-    const struct pipeline_texture textures[] = {
+    struct pipeline_texture textures[] = {
         {.name = "tex0", .texture = NULL},
         {.name = "tex1", .texture = NULL},
     };
+    for (int i = 0; i < desc->nb_planes; i++) {
+        const struct uniformprograminfo *info = ngli_hmap_get(hwconv->program.uniforms, textures[i].name);
+        if (!info)
+            continue;
+        textures[i].type = info->type;
+        textures[i].location = info->location;
+        textures[i].binding = info->binding;
+    }
 
     const struct attributeprograminfo *position = ngli_hmap_get(hwconv->program.attributes, "position");
     ngli_assert(position);

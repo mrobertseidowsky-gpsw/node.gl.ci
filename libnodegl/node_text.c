@@ -272,8 +272,12 @@ static int text_init(struct ngl_node *node)
         {.name = "projection_matrix", .type = NGLI_TYPE_MAT4, .count = 1, .data = NULL},
     };
 
+
+    const struct uniformprograminfo *tex = ngli_hmap_get(s->program.uniforms, "tex");
+    ngli_assert(tex);
+
     const struct pipeline_texture textures[] = {
-        {.name  = "tex", .texture = &s->texture},
+        {.name  = "tex", .type = tex->type, .location = tex->location, .binding = tex->binding, .texture = &s->texture},
     };
 
     const struct attributeprograminfo *position = ngli_hmap_get(s->program.attributes, "position");

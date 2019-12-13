@@ -39,6 +39,9 @@ struct pipeline_uniform {
 
 struct pipeline_texture {
     char name[MAX_ID_LEN];
+    int type;
+    int location;
+    int binding;
     struct texture *texture;
 };
 
