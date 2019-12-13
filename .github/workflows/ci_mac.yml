@@ -24,7 +24,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
 
-    - name: Install mac libs
+    - name: Install macOS libs
       run: |
         sw_vers
         brew update
@@ -34,6 +34,10 @@ jobs:
         sudo pip install virtualenv
    
     - name: Build node.gl
+      run: |
+        make
+
+    - name: Go into the virtualenv and run tests
       run: |
         . /Users/runner/runners/2.162.0/work/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
         make tests
