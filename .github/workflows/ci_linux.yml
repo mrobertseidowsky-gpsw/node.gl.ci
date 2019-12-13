@@ -33,13 +33,7 @@ jobs:
         apt-get -y install curl zlib1g-dev  nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
         apt-get -y install ffmpeg libavcodec-dev libavutil-dev libavformat-dev libavdevice-dev libavfilter-dev libswscale-dev libswresample-dev libpostproc-dev
    
-    - name: Build node.gl
+    - name: Go into the virtualenv and run tests
       run: |
-        echo $PATH
-        make
-
-    #- name: Go into the virtualenv and run tests
-    #  run: |
-    #    . /__w/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
-    #    make tests
-    #    echo $?
+        . /__w/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
+        make tests
