@@ -26,22 +26,14 @@ jobs:
 
     - name: Install mac libs
       run: |
-        echo "WHO I AM"
         sw_vers
         brew update
         brew upgrade
+        brew install python2 curl zlib nasm wget pkg-config glfw3 ffmpeg
         sudo easy_install pip
-        brew install python2 curl zlib nasm wget pkg-config glfw3
         sudo pip install virtualenv
-        brew install ffmpeg
    
     - name: Build node.gl
       run: |
-        echo "MAKE"
-        make
-
-    # - name: Go into the virtualenv and run tests
-    #   run: |
-    #     . /Users/runner/runners/2.162.0/work/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
-    #     make tests
-    #     echo $?
+        . /Users/runner/runners/2.162.0/work/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
+        make tests
