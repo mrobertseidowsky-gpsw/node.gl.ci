@@ -1181,6 +1181,10 @@ struct attribute_pair {
     struct pipeline_attribute attribute;
 };
 
+struct buffer_pair {
+    struct pipeline_buffer buffer;
+};
+
 static int build_attribute_pairs(struct pipeline *s, const struct pipeline_params *params)
 {
     struct ngl_ctx *ctx = s->ctx;
@@ -1252,10 +1256,47 @@ static int pipeline_compute_init(struct pipeline *s)
     return 0;
 }
 
-static int create_layout_desc_set(struct pipeline *s, struct pipeline_params *params)
-{
+static const VkDescriptorType descriptor_type_map[] = {
+    [NGLI_TYPE_UNIFORM_BUFFER] = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+    [NGLI_TYPE_STORAGE_BUFFER] = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+    [NGLI_TYPE_SAMPLER_2D]     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+    [NGLI_TYPE_SAMPLER_3D]     = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+    [NGLI_TYPE_IMAGE_2D]       = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+};
 
+static VkDescriptorType get_descriptor_type(int type)
+{
+    return descriptor_type_map[type];
 }
+
+static int create_desc_set_layout_bindings(struct pipeline *s, const struct pipeline_params *params)
+{
+    ngli_darray_init(&s->desc_set_layout_bindings, sizeof(VkDescriptorSetLayoutBinding), 0);
+
+    for (int i = 0; i < params->nb_buffers; i++) {
+        const struct pipeline_buffer *pipeline_buffer = &params->buffers[i];
+
+        struct buffer_pair pair = {
+            .buffer = *pipeline_buffer,
+        };
+        if (!ngli_darray_push(&s->buffer_pairs, &pair))
+            return NGL_ERROR_MEMORY;
+
+        const VkDescriptorType type = get_descriptor_type(pipeline_buffer->type);
+        const VkDescriptorSetLayoutBinding binding = {
+            .binding         = pipeline_buffer->binding,
+            .descriptorType  = type,
+            .descriptorCount = 1,
+            .stageFlags      = VK_SHADER_STAGE_ALL, // FIXME
+        };
+        if (!ngli_darray_push(&s->desc_set_layout_bindings, &binding))
+            return NGL_ERROR_MEMORY;
+    }
+
+    return 0;
+}
+
+
 
 int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pipeline_params *params)
 {
@@ -1270,11 +1311,10 @@ int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pip
 
     //ngli_darray_init(&s->uniform_pairs, sizeof(struct uniform_pair), 0);
     //ngli_darray_init(&s->texture_pairs, sizeof(struct texture_pair), 0);
-    //ngli_darray_init(&s->buffer_pairs,  sizeof(struct buffer_pair), 0);
+    ngli_darray_init(&s->buffer_pairs,  sizeof(struct buffer_pair), 0);
     ngli_darray_init(&s->attribute_pairs, sizeof(struct attribute_pair), 0);
 
-
-    if ((ret = create_layout_desc_set(s, params)) < 0)
+    if ((ret = create_desc_set_layout_bindings(s, params)) < 0)
         return ret;
 
     if (params->type == NGLI_PIPELINE_TYPE_GRAPHICS) {

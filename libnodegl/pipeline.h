@@ -150,6 +150,9 @@ struct pipeline {
     struct darray vertex_binding_descs;
     struct darray vertex_buffers;
     int nb_vertex_buffers;
+
+    struct darray desc_set_layout_bindings;
+
 #endif
 #else
     uint64_t used_texture_units;
