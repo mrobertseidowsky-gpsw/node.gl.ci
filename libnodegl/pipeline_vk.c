@@ -25,7 +25,10 @@
 #include <limits.h>
 #include <vulkan/vulkan_core.h>
 
+#include "darray.h"
+#include "format.h"
 #include "buffer.h"
+#include "glcontext.h"
 #include "glincludes.h"
 #include "hmap.h"
 #include "image.h"
@@ -34,6 +37,7 @@
 #include "memory.h"
 #include "nodegl.h"
 #include "nodes.h"
+#include "pipeline.h"
 #include "type.h"
 #include "texture.h"
 #include "topology.h"
@@ -1174,49 +1178,62 @@ int ngli_pipeline_unbind(struct pipeline *s)
 #else
 
 struct attribute_pair {
-    int count;
-    int location;
     struct pipeline_attribute attribute;
 };
 
 static int build_attribute_pairs(struct pipeline *s, const struct pipeline_params *params)
 {
     struct ngl_ctx *ctx = s->ctx;
+    struct glcontext *vk = ctx->glcontext;
     const struct program *program = s->program;
 
-    if (!program->attributes)
-        return 0;
-
-    struct hmap_entry *entry = NULL;
-    while ((entry = ngli_hmap_next(program->attributes, entry)) != NULL) {
-    }
-
+    ngli_darray_init(&s->attribute_descs, sizeof(VkVertexInputAttributeDescription), 0);
+    ngli_darray_init(&s->vertex_binding_descs,   sizeof(VkVertexInputBindingDescription), 0);
+    ngli_darray_init(&s->vertex_buffers, sizeof(VkBuffer), 0);
 
     for (int i = 0; i < params->nb_attributes; i++) {
         const struct pipeline_attribute *attribute = &params->attributes[i];
-        const struct program_variable_info *info = ngli_hmap_get(program->attributes, attribute->name);
-        if (!info || info->location < 0)
-            continue;
 
         if (attribute->count > 4) {
             LOG(ERROR, "attribute count could not exceed 4");
             return NGL_ERROR_INVALID_ARG;
         }
-        const int type_count = info->type == NGLI_TYPE_MAT4 ? 4 : 1;
-        const int attribute_count = NGLI_MAX(NGLI_MIN(attribute->count, type_count), 1);
 
         struct attribute_pair pair = {
-            .count     = attribute_count,
-            .location  = info->location,
             .attribute = *attribute,
         };
         if (!ngli_darray_push(&s->attribute_pairs, &pair))
+            return NGL_ERROR_MEMORY;
+
+        VkVertexInputBindingDescription binding_desc = {
+            .binding   = s->nb_vertex_buffers,
+            .stride    = attribute->stride,
+            .inputRate = attribute->rate ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX,
+        };
+        if (!ngli_darray_push(&s->vertex_binding_descs, &binding_desc))
+            return NGL_ERROR_MEMORY;
+
+        VkFormat format = VK_FORMAT_UNDEFINED;
+        int ret = ngli_format_get_vk_format(vk, attribute->format, &format);
+        if (ret < 0)
+            return ret;
+
+        VkVertexInputAttributeDescription attr_desc = {
+            .binding  = s->nb_vertex_buffers,
+            .location = attribute->location,
+            .format   = format,
+            .offset   = attribute->offset,
+        };
+        if (!ngli_darray_push(&s->attribute_descs, &attr_desc))
+            return NGL_ERROR_MEMORY;
+
+        struct buffer *buffer = attribute->buffer;
+        if (!ngli_darray_push(&s->vertex_buffers, &buffer->vkbuf))
             return NGL_ERROR_MEMORY;
     }
 
     return 0;
 }
-
 
 static int pipeline_graphics_init(struct pipeline *s, const struct pipeline_params *params)
 {
@@ -1235,6 +1252,11 @@ static int pipeline_compute_init(struct pipeline *s)
     return 0;
 }
 
+static int create_layout_desc_set(struct pipeline *s, struct pipeline_params *params)
+{
+
+}
+
 int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pipeline_params *params)
 {
     int ret;
@@ -1245,6 +1267,15 @@ int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pip
     s->graphics = params->graphics;
     s->compute  = params->compute;
     s->program  = params->program;
+
+    //ngli_darray_init(&s->uniform_pairs, sizeof(struct uniform_pair), 0);
+    //ngli_darray_init(&s->texture_pairs, sizeof(struct texture_pair), 0);
+    //ngli_darray_init(&s->buffer_pairs,  sizeof(struct buffer_pair), 0);
+    ngli_darray_init(&s->attribute_pairs, sizeof(struct attribute_pair), 0);
+
+
+    if ((ret = create_layout_desc_set(s, params)) < 0)
+        return ret;
 
     if (params->type == NGLI_PIPELINE_TYPE_GRAPHICS) {
         ret = pipeline_graphics_init(s, params);

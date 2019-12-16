@@ -117,6 +117,9 @@ struct pipeline {
     void (*exec)(const struct pipeline *s, struct glcontext *gl);
 
 #ifdef VULKAN_BACKEND
+#if 0
+
+
     int last_width;
     int last_height;
 
@@ -142,6 +145,12 @@ struct pipeline {
     struct buffer uniform_buffer;
 
     int flags;
+#else
+    struct darray attribute_descs;
+    struct darray vertex_binding_descs;
+    struct darray vertex_buffers;
+    int nb_vertex_buffers;
+#endif
 #else
     uint64_t used_texture_units;
     GLuint vao_id;
