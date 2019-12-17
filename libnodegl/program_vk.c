@@ -78,6 +78,7 @@ int ngli_program_init(struct program *s, struct ngl_ctx *ctx, const char *vertex
         VkResult ret = vkCreateShaderModule(vk->device, &shader_module_create_info, NULL, &shader->vkmodule);
         if (ret != VK_SUCCESS)
             return -1;
+        LOG(ERROR, "zoum");
     }
 
     return 0;

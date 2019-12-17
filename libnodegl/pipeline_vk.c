@@ -1185,6 +1185,11 @@ struct buffer_pair {
     struct pipeline_buffer buffer;
 };
 
+struct texture_pair {
+    struct pipeline_texture texture;
+};
+
+
 static int build_attribute_pairs(struct pipeline *s, const struct pipeline_params *params)
 {
     struct ngl_ctx *ctx = s->ctx;
@@ -1210,7 +1215,7 @@ static int build_attribute_pairs(struct pipeline *s, const struct pipeline_param
             return NGL_ERROR_MEMORY;
 
         VkVertexInputBindingDescription binding_desc = {
-            .binding   = s->nb_vertex_buffers,
+            .binding   = ngli_darray_count(&s->vertex_buffers),
             .stride    = attribute->stride,
             .inputRate = attribute->rate ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX,
         };
@@ -1223,7 +1228,7 @@ static int build_attribute_pairs(struct pipeline *s, const struct pipeline_param
             return ret;
 
         VkVertexInputAttributeDescription attr_desc = {
-            .binding  = s->nb_vertex_buffers,
+            .binding  = ngli_darray_count(&s->vertex_buffers),
             .location = attribute->location,
             .format   = format,
             .offset   = attribute->offset,
@@ -1242,17 +1247,174 @@ static int build_attribute_pairs(struct pipeline *s, const struct pipeline_param
 static int pipeline_graphics_init(struct pipeline *s, const struct pipeline_params *params)
 {
     struct ngl_ctx *ctx = s->ctx;
+    struct glcontext *vk = ctx->glcontext;
     struct pipeline_graphics *graphics = &s->graphics;
 
     int ret = build_attribute_pairs(s, params);
     if (ret < 0)
         return ret;
 
+    VkPipelineVertexInputStateCreateInfo vertex_input_state_create_info = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+        .vertexBindingDescriptionCount = ngli_darray_count(&s->vertex_binding_descs),
+        .pVertexBindingDescriptions = ngli_darray_data(&s->vertex_binding_descs),
+        .vertexAttributeDescriptionCount = ngli_darray_count(&s->attribute_descs),
+        .pVertexAttributeDescriptions = ngli_darray_data(&s->attribute_descs),
+    };
+
+    VkPipelineInputAssemblyStateCreateInfo input_assembly_state_create_info = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+        .topology = ngli_topology_get_vk_topology(graphics->topology),
+    };
+
+    /* Viewport */
+    VkViewport viewport = {
+        .width = vk->config.width,
+        .height = vk->config.height,
+        .minDepth = 0.f,
+        .maxDepth = 1.f,
+    };
+
+    VkRect2D scissor = {
+        .extent = vk->extent,
+    };
+
+    VkPipelineViewportStateCreateInfo viewport_state_create_info = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+        .viewportCount = 1,
+        .pViewports = &viewport,
+        .scissorCount = 1,
+        .pScissors = &scissor,
+    };
+
+    /* Rasterization */
+    VkPipelineRasterizationStateCreateInfo rasterization_state_create_info = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+        .polygonMode = VK_POLYGON_MODE_FILL,
+        .lineWidth = 1.f,
+        .cullMode = VK_CULL_MODE_BACK_BIT,
+        .frontFace = VK_FRONT_FACE_CLOCKWISE,
+    };
+
+    /* Multisampling */
+    VkPipelineMultisampleStateCreateInfo multisampling_state_create_info = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+    };
+
+    const struct glstate *vkstate = &s->ctx->glstate;
+
+    /* Depth & stencil */
+#if 0
+    VkPipelineDepthStencilStateCreateInfo depthstencil_state_create_info = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+        .depthTestEnable = vkstate->depth_test,
+        .depthWriteEnable = 0,
+        .depthCompareOp = vkstate->depth_func,
+        .depthBoundsTestEnable = 0,
+        .stencilTestEnable = vkstate->stencil_test,
+        .front = 0,
+        .back = 0,
+        .minDepthBounds = 0.0f,
+        .maxDepthBounds = 0.0f,
+    };
+#endif
+
+    /* Blend */
+    VkPipelineColorBlendAttachmentState colorblend_attachment_state = {
+        .blendEnable = vkstate->blend,
+        .srcColorBlendFactor = vkstate->blend_src_factor,
+        .dstColorBlendFactor = vkstate->blend_dst_factor,
+        .colorBlendOp = vkstate->blend_op,
+        .srcAlphaBlendFactor = vkstate->blend_src_factor_a,
+        .dstAlphaBlendFactor = vkstate->blend_dst_factor_a,
+        .alphaBlendOp = vkstate->blend_op_a,
+        .colorWriteMask = vkstate->color_write_mask,
+    };
+
+    VkPipelineColorBlendStateCreateInfo colorblend_state_create_info = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+        .attachmentCount = 1,
+        .pAttachments = &colorblend_attachment_state,
+    };
+
+    /* Dynamic states */
+    VkDynamicState dynamic_states[] = {
+        VK_DYNAMIC_STATE_VIEWPORT,
+        VK_DYNAMIC_STATE_SCISSOR,
+        VK_DYNAMIC_STATE_LINE_WIDTH,
+    };
+
+    VkPipelineDynamicStateCreateInfo dynamic_state_create_info = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+        .dynamicStateCount = NGLI_ARRAY_NB(dynamic_states),
+        .pDynamicStates = dynamic_states,
+
+    };
+
+    const struct program *program = s->program;
+    VkPipelineShaderStageCreateInfo shader_stage_create_info[2] = {
+        {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .module = program->shaders[NGLI_PROGRAM_SHADER_VERT].vkmodule,
+            .pName = "main",
+        },{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .module = program->shaders[NGLI_PROGRAM_SHADER_FRAG].vkmodule,
+            .pName = "main",
+        },
+    };
+
+    VkGraphicsPipelineCreateInfo graphics_pipeline_create_info = {
+        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+        .stageCount = NGLI_ARRAY_NB(shader_stage_create_info),
+        .pStages = shader_stage_create_info,
+        .pVertexInputState = &vertex_input_state_create_info,
+        .pInputAssemblyState = &input_assembly_state_create_info,
+        .pViewportState = &viewport_state_create_info,
+        .pRasterizationState = &rasterization_state_create_info,
+        .pMultisampleState = &multisampling_state_create_info,
+        .pDepthStencilState = NULL,
+        .pColorBlendState = &colorblend_state_create_info,
+        .pDynamicState = &dynamic_state_create_info,
+        .layout = s->pipeline_layout,
+        .renderPass = vk->render_pass,
+        .subpass = 0,
+    };
+
+    VkResult vkret = vkCreateGraphicsPipelines(vk->device, NULL, 1, &graphics_pipeline_create_info, NULL, &s->pipeline);
+    if (vkret != VK_SUCCESS)
+        return NGL_ERROR_EXTERNAL;
+
     return 0;
 }
 
 static int pipeline_compute_init(struct pipeline *s)
 {
+    struct ngl_ctx *ctx = s->ctx;
+    struct glcontext *vk = ctx->glcontext;
+
+    const struct program *program = s->program;
+
+    VkPipelineShaderStageCreateInfo shader_stage_create_info = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+        .module = program->shaders[NGLI_PROGRAM_SHADER_COMP].vkmodule,
+        .pName = "main",
+    };
+
+    VkComputePipelineCreateInfo compute_pipeline_create_info = {
+        .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+        .stage = shader_stage_create_info,
+        .layout = s->pipeline_layout,
+    };
+
+    VkResult vkret = vkCreateComputePipelines(vk->device, NULL, 1, &compute_pipeline_create_info, NULL, &s->pipeline);
+    if (vkret != VK_SUCCESS)
+        return NGL_ERROR_EXTERNAL;
+
     return 0;
 }
 
@@ -1271,16 +1433,20 @@ static VkDescriptorType get_descriptor_type(int type)
 
 static int create_desc_set_layout_bindings(struct pipeline *s, const struct pipeline_params *params)
 {
+    struct ngl_ctx *ctx = s->ctx;
+    struct glcontext *vk = ctx->glcontext;
+
     ngli_darray_init(&s->desc_set_layout_bindings, sizeof(VkDescriptorSetLayoutBinding), 0);
+
+    VkDescriptorPoolSize desc_pool_size_map[] = {
+        [NGLI_TYPE_UNIFORM_BUFFER] = {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER},
+        [NGLI_TYPE_STORAGE_BUFFER] = {.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER},
+        [NGLI_TYPE_SAMPLER_2D]     = {.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER},
+        [NGLI_TYPE_IMAGE_2D]       = {.type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE},
+    };
 
     for (int i = 0; i < params->nb_buffers; i++) {
         const struct pipeline_buffer *pipeline_buffer = &params->buffers[i];
-
-        struct buffer_pair pair = {
-            .buffer = *pipeline_buffer,
-        };
-        if (!ngli_darray_push(&s->buffer_pairs, &pair))
-            return NGL_ERROR_MEMORY;
 
         const VkDescriptorType type = get_descriptor_type(pipeline_buffer->type);
         const VkDescriptorSetLayoutBinding binding = {
@@ -1291,12 +1457,144 @@ static int create_desc_set_layout_bindings(struct pipeline *s, const struct pipe
         };
         if (!ngli_darray_push(&s->desc_set_layout_bindings, &binding))
             return NGL_ERROR_MEMORY;
+
+        struct buffer_pair pair = {
+            .buffer = *pipeline_buffer,
+        };
+        if (!ngli_darray_push(&s->buffer_pairs, &pair))
+            return NGL_ERROR_MEMORY;
+
+        desc_pool_size_map[pipeline_buffer->type].descriptorCount += vk->nb_framebuffers;
     }
 
+    for (int i = 0; i < params->nb_textures; i++) {
+        const struct pipeline_texture *pipeline_texture = &params->textures[i];
+
+        const VkDescriptorType type = get_descriptor_type(pipeline_texture->type);
+        const VkDescriptorSetLayoutBinding binding = {
+            .binding         = pipeline_texture->binding,
+            .descriptorType  = type,
+            .descriptorCount = 1,
+            .stageFlags      = VK_SHADER_STAGE_ALL, // FIXME
+        };
+        if (!ngli_darray_push(&s->desc_set_layout_bindings, &binding))
+            return NGL_ERROR_MEMORY;
+
+        struct texture_pair pair = {
+            .texture = *pipeline_texture,
+        };
+        if (!ngli_darray_push(&s->texture_pairs, &pair))
+            return NGL_ERROR_MEMORY;
+
+        desc_pool_size_map[pipeline_texture->type].descriptorCount += vk->nb_framebuffers;
+    }
+
+    struct VkDescriptorPoolSize desc_pool_sizes[NGLI_ARRAY_NB(desc_pool_size_map)];
+    int nb_desc_pool_sizes = 0;
+    for (int i = 0; i < NGLI_ARRAY_NB(desc_pool_size_map); i++) {
+        if (desc_pool_size_map[i].descriptorCount) {
+            desc_pool_sizes[nb_desc_pool_sizes++] = desc_pool_size_map[i];
+        }
+    }
+
+    if (!nb_desc_pool_sizes)
+        return 0;
+
+    VkDescriptorPoolCreateInfo descriptor_pool_create_info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .poolSizeCount = nb_desc_pool_sizes,
+        .pPoolSizes = desc_pool_sizes,
+        .maxSets = vk->nb_framebuffers,
+    };
+
+    VkResult vkret = vkCreateDescriptorPool(vk->device, &descriptor_pool_create_info, NULL, &s->desc_pool);
+    if (vkret != VK_SUCCESS)
+        return NGL_ERROR_EXTERNAL;
+
+    VkDescriptorSetLayoutCreateInfo descriptor_set_layout_create_info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .bindingCount = ngli_darray_count(&s->desc_set_layout_bindings),
+        .pBindings = (const VkDescriptorSetLayoutBinding *)ngli_darray_data(&s->desc_set_layout_bindings),
+    };
+
+    vkret = vkCreateDescriptorSetLayout(vk->device, &descriptor_set_layout_create_info, NULL, &s->desc_set_layout);
+    if (vkret != VK_SUCCESS)
+        return NGL_ERROR_EXTERNAL;
+
+    VkDescriptorSetLayout *desc_set_layouts = ngli_calloc(vk->nb_framebuffers, sizeof(*desc_set_layouts));
+    if (!desc_set_layouts)
+        return NGL_ERROR_MEMORY;
+
+    for (int i = 0; i < vk->nb_framebuffers; i++)
+        desc_set_layouts[i] = s->desc_set_layout;
+
+    VkDescriptorSetAllocateInfo descriptor_set_allocate_info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .descriptorPool = s->desc_pool,
+        .descriptorSetCount = vk->nb_framebuffers,
+        .pSetLayouts = desc_set_layouts
+    };
+
+    s->desc_sets = ngli_calloc(vk->nb_framebuffers, sizeof(*s->desc_sets));
+    if (!s->desc_sets) {
+        ngli_free(desc_set_layouts);
+        return NGL_ERROR_MEMORY;
+    }
+
+    vkret = vkAllocateDescriptorSets(vk->device, &descriptor_set_allocate_info, s->desc_sets);
+    if (vkret != VK_SUCCESS) {
+        ngli_free(desc_set_layouts);
+        return NGL_ERROR_EXTERNAL;
+    }
+
+    for (int i = 0; i < params->nb_buffers; i++) {
+        const struct pipeline_buffer *pipeline_buffer = &params->buffers[i];
+        struct buffer *buffer = pipeline_buffer->buffer;
+
+        for (int i = 0; i < vk->nb_framebuffers; i++) {
+            const VkDescriptorBufferInfo descriptor_buffer_info = {
+                .buffer = buffer->vkbuf,
+                .offset = 0,
+                .range  = buffer->size,
+            };
+            const VkDescriptorType type = get_descriptor_type(pipeline_buffer->type);
+            const VkWriteDescriptorSet write_descriptor_set = {
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet = s->desc_sets[i],
+                .dstBinding = pipeline_buffer->binding,
+                .dstArrayElement = 0,
+                .descriptorType = type,
+                .descriptorCount = 1,
+                .pBufferInfo = &descriptor_buffer_info,
+                .pImageInfo = NULL,
+                .pTexelBufferView = NULL,
+            };
+            vkUpdateDescriptorSets(vk->device, 1, &write_descriptor_set, 0, NULL);
+        }
+    }
+
+    ngli_free(desc_set_layouts);
     return 0;
 }
 
+static int create_pipeline_layout(struct pipeline *s)
+{
+    struct ngl_ctx *ctx = s->ctx;
+    struct glcontext *vk = ctx->glcontext;
 
+    // FIXME: handle push constants
+    VkPipelineLayoutCreateInfo pipeline_layout_create_info = {
+        .sType          = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .setLayoutCount = s->desc_set_layout ? 1 : 0,
+        .pSetLayouts    = &s->desc_set_layout,
+    };
+
+    VkResult vkret = vkCreatePipelineLayout(vk->device, &pipeline_layout_create_info, NULL, &s->pipeline_layout);
+    if (vkret != VK_SUCCESS)
+        return NGL_ERROR_EXTERNAL;
+
+    return 0;
+}
 
 int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pipeline_params *params)
 {
@@ -1310,11 +1608,14 @@ int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pip
     s->program  = params->program;
 
     //ngli_darray_init(&s->uniform_pairs, sizeof(struct uniform_pair), 0);
-    //ngli_darray_init(&s->texture_pairs, sizeof(struct texture_pair), 0);
+    ngli_darray_init(&s->texture_pairs, sizeof(struct texture_pair), 0);
     ngli_darray_init(&s->buffer_pairs,  sizeof(struct buffer_pair), 0);
     ngli_darray_init(&s->attribute_pairs, sizeof(struct attribute_pair), 0);
 
     if ((ret = create_desc_set_layout_bindings(s, params)) < 0)
+        return ret;
+
+    if ((ret = create_pipeline_layout(s)) < 0)
         return ret;
 
     if (params->type == NGLI_PIPELINE_TYPE_GRAPHICS) {

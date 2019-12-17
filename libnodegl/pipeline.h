@@ -76,7 +76,7 @@ struct pipeline_graphics {
 
 struct pipeline_compute {
     int nb_group_x;
-    int nb_group_y;
+int nb_group_y;
     int nb_group_z;
 };
 
@@ -151,8 +151,12 @@ struct pipeline {
     struct darray vertex_buffers;
     int nb_vertex_buffers;
 
+    VkDescriptorPool desc_pool;
     struct darray desc_set_layout_bindings;
-
+    VkDescriptorSetLayout desc_set_layout;
+    VkDescriptorSet *desc_sets;
+    VkPipelineLayout pipeline_layout;
+    VkPipeline pipeline;
 #endif
 #else
     uint64_t used_texture_units;
