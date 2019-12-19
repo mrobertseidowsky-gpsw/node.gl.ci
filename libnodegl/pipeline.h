@@ -149,6 +149,7 @@ struct pipeline {
     struct darray attribute_descs;
     struct darray vertex_binding_descs;
     struct darray vertex_buffers;
+    struct darray vertex_offsets;
     int nb_vertex_buffers;
 
     VkDescriptorPool desc_pool;
@@ -157,6 +158,11 @@ struct pipeline {
     VkDescriptorSet *desc_sets;
     VkPipelineLayout pipeline_layout;
     VkPipeline pipeline;
+
+    VkCommandPool command_pool;
+    VkCommandBuffer *command_buffers;
+
+    VkPipelineBindPoint bind_point;
 #endif
 #else
     uint64_t used_texture_units;
