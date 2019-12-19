@@ -1189,7 +1189,6 @@ struct texture_pair {
     struct pipeline_texture texture;
 };
 
-
 static int build_attribute_pairs(struct pipeline *s, const struct pipeline_params *params)
 {
     struct ngl_ctx *ctx = s->ctx;
@@ -1327,6 +1326,7 @@ static int pipeline_graphics_init(struct pipeline *s, const struct pipeline_para
 
     /* Blend */
     VkPipelineColorBlendAttachmentState colorblend_attachment_state = {
+        /*
         .blendEnable = vkstate->blend,
         .srcColorBlendFactor = vkstate->blend_src_factor,
         .dstColorBlendFactor = vkstate->blend_dst_factor,
@@ -1335,6 +1335,9 @@ static int pipeline_graphics_init(struct pipeline *s, const struct pipeline_para
         .dstAlphaBlendFactor = vkstate->blend_dst_factor_a,
         .alphaBlendOp = vkstate->blend_op_a,
         .colorWriteMask = vkstate->color_write_mask,
+        */
+        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+        .blendEnable = VK_FALSE,
     };
 
     VkPipelineColorBlendStateCreateInfo colorblend_state_create_info = {
@@ -1686,8 +1689,13 @@ int ngli_pipeline_get_uniform_index(struct pipeline *s, const char *name)
 
 int ngli_pipeline_get_texture_index(struct pipeline *s, const char *name)
 {
-    LOG(ERROR, "stub");
-    return 0;
+    struct pipeline_texture *pairs = ngli_darray_data(&s->texture_pairs);
+    for (int i = 0; i < ngli_darray_count(&s->texture_pairs); i++) {
+        struct pipeline_texture *pipeline_texture = &pairs[i];
+        if (!strcmp(pipeline_texture->name, name))
+            return i;
+    }
+    return NGL_ERROR_NOT_FOUND;
 }
 
 int ngli_pipeline_update_uniform(struct pipeline *s, int index, const void *value)
@@ -1698,7 +1706,30 @@ int ngli_pipeline_update_uniform(struct pipeline *s, int index, const void *valu
 
 int ngli_pipeline_update_texture(struct pipeline *s, int index, struct texture *texture)
 {
-    LOG(ERROR, "stub");
+    struct ngl_ctx *ctx = s->ctx;
+    struct glcontext *vk = ctx->glcontext;
+
+    ngli_assert(index < ngli_darray_count(&s->texture_pairs));
+    struct pipeline_texture *pairs = ngli_darray_data(&s->texture_pairs);
+    struct pipeline_texture *pipeline_texture = &pairs[index];
+    pipeline_texture->texture = texture;
+
+    VkDescriptorImageInfo image_info = {
+        .imageLayout = texture->image_layout,
+        .imageView   = texture->image_view,
+        .sampler     = texture->image_sampler,
+    };
+    VkWriteDescriptorSet write_descriptor_set = {
+        .sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet           = s->desc_sets[vk->img_index],
+        .dstBinding       = pipeline_texture->binding,
+        .dstArrayElement  = 0,
+        .descriptorType   = get_descriptor_type(pipeline_texture->type),
+        .descriptorCount  = 1,
+        .pImageInfo       = &image_info,
+    };
+    vkUpdateDescriptorSets(vk->device, 1, &write_descriptor_set, 0, NULL);
+
     return 0;
 }
 
@@ -1791,6 +1822,31 @@ void ngli_pipeline_exec(struct pipeline *s)
 
 void ngli_pipeline_reset(struct pipeline *s)
 {
-    LOG(ERROR, "stub");
+    if (!s->ctx)
+        return;
+
+    struct ngl_ctx *ctx = s->ctx;
+    struct glcontext *vk = ctx->glcontext;
+
+    vkDeviceWaitIdle(vk->device);
+
+    vkFreeCommandBuffers(vk->device, s->command_pool, vk->nb_framebuffers, s->command_buffers);
+    ngli_free(s->command_buffers);
+    vkDestroyCommandPool(vk->device, s->command_pool, NULL);
+
+    vkDestroyDescriptorPool(vk->device, s->desc_pool, NULL);
+    vkDestroyDescriptorSetLayout(vk->device, s->desc_set_layout, NULL);
+    ngli_free(s->desc_sets);
+
+    vkDestroyPipeline(vk->device, s->pipeline, NULL);
+    vkDestroyPipelineLayout(vk->device, s->pipeline_layout, NULL);
+
+    ngli_darray_reset(&s->attribute_descs);
+    ngli_darray_reset(&s->vertex_binding_descs);
+    ngli_darray_reset(&s->vertex_buffers);
+    ngli_darray_reset(&s->vertex_offsets);
+    ngli_darray_reset(&s->desc_set_layout_bindings);
+
+    memset(s, 0, sizeof(*s));
 }
 #endif
