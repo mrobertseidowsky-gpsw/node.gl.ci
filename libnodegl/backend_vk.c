@@ -501,12 +501,13 @@ static VkResult create_vulkan_device(struct glcontext *vk)
 {
     /* Device Queue info */
     int nb_queues = 1;
+    float queue_priority = 1.0;
 
     VkDeviceQueueCreateInfo graphic_queue_create_info = {
         .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
         .queueFamilyIndex = vk->queue_family_graphics_id,
         .queueCount = 1,
-        .pQueuePriorities = (const float[]){1.0f},
+        .pQueuePriorities = &queue_priority,
     };
 
     VkDeviceQueueCreateInfo queues_create_info[2];
@@ -517,7 +518,7 @@ static VkResult create_vulkan_device(struct glcontext *vk)
             .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
             .queueFamilyIndex = vk->queue_family_present_id,
             .queueCount = 1,
-            .pQueuePriorities = (const float[]){1.0f},
+            .pQueuePriorities = &queue_priority,
         };
         queues_create_info[nb_queues++] = present_queue_create_info;
     }
