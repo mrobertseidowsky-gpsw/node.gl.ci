@@ -846,6 +846,7 @@ int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pip
         }
     }
 
+
     if (uniform_buffer_size) {
         // allocate buffer
         int ret = ngli_buffer_init(&s->uniform_buffer,
