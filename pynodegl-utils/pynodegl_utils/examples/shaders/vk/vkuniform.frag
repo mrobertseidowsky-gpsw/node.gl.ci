@@ -7,9 +7,16 @@ layout(binding = 1) uniform FragmentParameters {
     vec3 factor2;
 } parameters;
 
+layout(binding = 2) uniform VertexParameter {
+    vec4  color0;
+    vec4  color1;
+    vec4  color2;
+} parameters2;
+
+
 layout(location = 0) in vec4 input_color;
 layout(location = 0) out vec4 output_color;
 
 void main() {
-    output_color = vec4(input_color.rg, input_color.b * parameters.factor1.x, input_color.a);
+    output_color = vec4(1.0, 0.0, 0.0, 1.0);
 }

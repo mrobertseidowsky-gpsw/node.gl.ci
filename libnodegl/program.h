@@ -22,6 +22,7 @@
 #ifndef PROGRAM_H
 #define PROGRAM_H
 
+#include "darray.h"
 #include "glincludes.h"
 #include "hmap.h"
 #include <shaderc/shaderc.h>
@@ -32,10 +33,13 @@
 struct program_variable_info {
     int type;
     int size;
+    int offset;
+    int index;
     int binding;
     int location;
     int stages;
     int access;
+    struct darray fields;
 };
 
 #ifdef VULKAN_BACKEND

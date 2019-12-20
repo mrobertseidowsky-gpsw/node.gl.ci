@@ -18,10 +18,14 @@ layout(binding = 0) uniform VertexParameter {
     vec4  color2;
 } parameters;
 
+layout(binding = 0) buffer ZOB {
+    vec4 color0;
+} coucou;
+
 layout(location = 0) out vec4 color;
 
 void main()
 {
     gl_Position = ngl.projection_matrix * ngl.modelview_matrix * vec4(ngl_position, 1.0);
-    color = parameters.color2;
+    color = parameters.color2 + coucou.color0;
 }

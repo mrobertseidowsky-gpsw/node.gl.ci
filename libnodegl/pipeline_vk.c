@@ -1194,7 +1194,6 @@ static int build_attribute_pairs(struct pipeline *s, const struct pipeline_param
 {
     struct ngl_ctx *ctx = s->ctx;
     struct glcontext *vk = ctx->glcontext;
-    const struct program *program = s->program;
 
     ngli_darray_init(&s->attribute_descs, sizeof(VkVertexInputAttributeDescription), 0);
     ngli_darray_init(&s->vertex_binding_descs,   sizeof(VkVertexInputBindingDescription), 0);
@@ -1307,7 +1306,7 @@ static int pipeline_graphics_init(struct pipeline *s, const struct pipeline_para
         .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
     };
 
-    const struct glstate *vkstate = &s->ctx->glstate;
+    //const struct glstate *vkstate = &s->ctx->glstate;
 
     /* Depth & stencil */
 #if 0
