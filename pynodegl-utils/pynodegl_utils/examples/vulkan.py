@@ -65,6 +65,26 @@ def vkuniform(cfg, color2=(1.0, 0.0, 1.0, 1.0), factor0=1.0, factor1=1.0):
     return render
 
 
+@scene(color2=scene.Color(),
+       factor0=scene.Range(range=[0,1], unit_base=100),
+       factor1=scene.Range(range=[0,1], unit_base=100))
+def vkubo(cfg, color0=(1.0, 0.0, 1.0, 1.0), factor0=1.0, factor1=1.0):
+
+    block = ngl.Block(fields=[
+            ngl.UniformFloat(value=factor0),
+            ngl.UniformFloat(value=factor1)
+            ngl.UniformVec4(value=color0),
+            ], layout='std140')
+
+    geometry = ngl.Quad()
+    program = ngl.Program(fragment=cfg.get_frag('vkubo'),
+                          vertex=cfg.get_vert('vkubo'))
+    render = ngl.Render(geometry, program)
+
+    render.update_blocks(block=block)
+    return render
+
+
 @scene()
 def vktexture_media(cfg):
     group = ngl.Group()
