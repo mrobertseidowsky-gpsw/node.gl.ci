@@ -20,9 +20,16 @@
  */
 
 #include <string.h>
+#include <vulkan/vulkan.h>
 
 #include "buffer.h"
 #include "nodes.h"
+
+#define USAGE (VK_BUFFER_USAGE_VERTEX_BUFFER_BIT  | \
+               VK_BUFFER_USAGE_INDEX_BUFFER_BIT   | \
+               VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | \
+               VK_BUFFER_USAGE_STORAGE_BUFFER_BIT)  \
+           
 
 int ngli_buffer_init(struct buffer *s, struct ngl_ctx *ctx, int size, int usage)
 {
@@ -35,7 +42,7 @@ int ngli_buffer_init(struct buffer *s, struct ngl_ctx *ctx, int size, int usage)
     VkBufferCreateInfo buffer_create_info = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
         .size = size,
-        .usage = usage,
+        .usage = USAGE,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
     };
     if (vkCreateBuffer(vk->device, &buffer_create_info, NULL, &s->vkbuf) != VK_SUCCESS)
