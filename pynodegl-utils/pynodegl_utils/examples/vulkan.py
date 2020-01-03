@@ -76,12 +76,16 @@ def vkubo(cfg, color0=(1.0, 0.0, 1.0, 1.0), factor0=1.0, factor1=1.0):
             ngl.UniformVec4(value=color0),
             ], layout='std140')
 
+    block2 = ngl.Block(fields=[
+            ngl.UniformFloat(value=1.0),
+            ], layout='std430')
+
     geometry = ngl.Quad()
     program = ngl.Program(fragment=cfg.get_frag('vkubo'),
                           vertex=cfg.get_vert('vkubo'))
     render = ngl.Render(geometry, program)
 
-    render.update_blocks(block=block)
+    render.update_blocks(block=block, block2=block2)
     return render
 
 
