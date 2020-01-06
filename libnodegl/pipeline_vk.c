@@ -1178,6 +1178,11 @@ int ngli_pipeline_unbind(struct pipeline *s)
 }
 #else
 
+struct uniform_pair {
+    uint64_t offset;
+    struct pipeline_uniform uniform;
+};
+
 struct attribute_pair {
     struct pipeline_attribute attribute;
 };
@@ -1465,7 +1470,7 @@ static int create_desc_set_layout_bindings(struct pipeline *s, const struct pipe
             .binding         = pipeline_buffer->binding,
             .descriptorType  = type,
             .descriptorCount = 1,
-            .stageFlags      = VK_SHADER_STAGE_ALL, // FIXME
+            .stageFlags      = VK_SHADER_STAGE_ALL,
         };
         if (!ngli_darray_push(&s->desc_set_layout_bindings, &binding))
             return NGL_ERROR_MEMORY;
@@ -1479,6 +1484,37 @@ static int create_desc_set_layout_bindings(struct pipeline *s, const struct pipe
         desc_pool_size_map[pipeline_buffer->type].descriptorCount += vk->nb_framebuffers;
     }
 
+    /* XXX */
+    {
+        struct hmap *blocks = s->program->buffer_blocks;
+        struct program_variable_info *ngl_block = ngli_hmap_get(blocks, "ngl");
+        if (ngl_block) {
+            const VkDescriptorType type = get_descriptor_type(ngl_block->type);
+
+            s->uniform_binding = ngl_block->binding;
+            s->uniform_type = type;
+            s->uniform_data = ngli_calloc(1, ngl_block->size);
+            if (!s->uniform_data)
+                return NGL_ERROR_MEMORY;
+
+            const VkDescriptorSetLayoutBinding binding = {
+                .binding         = s->uniform_binding,
+                .descriptorType  = s->uniform_type,
+                .descriptorCount = 1,
+                .stageFlags      = VK_SHADER_STAGE_ALL,
+            };
+            if (!ngli_darray_push(&s->desc_set_layout_bindings, &binding))
+                return NGL_ERROR_MEMORY;
+
+            desc_pool_size_map[ngl_block->type].descriptorCount += vk->nb_framebuffers;
+
+            int ret = ngli_buffer_init(&s->uniform_buffer, s->ctx, ngl_block->size, NGLI_BUFFER_USAGE_DYNAMIC);
+            if (ret < 0)
+                return ret;
+            LOG(ERROR, ">>");
+        }
+    }
+
     for (int i = 0; i < params->nb_textures; i++) {
         const struct pipeline_texture *pipeline_texture = &params->textures[i];
 
@@ -1487,7 +1523,7 @@ static int create_desc_set_layout_bindings(struct pipeline *s, const struct pipe
             .binding         = pipeline_texture->binding,
             .descriptorType  = type,
             .descriptorCount = 1,
-            .stageFlags      = VK_SHADER_STAGE_ALL, // FIXME
+            .stageFlags      = VK_SHADER_STAGE_ALL,
         };
         if (!ngli_darray_push(&s->desc_set_layout_bindings, &binding))
             return NGL_ERROR_MEMORY;
@@ -1509,6 +1545,7 @@ static int create_desc_set_layout_bindings(struct pipeline *s, const struct pipe
         }
     }
 
+    LOG(ERROR, "nb_desc_pool_sizes=%d", nb_desc_pool_sizes);
     if (!nb_desc_pool_sizes)
         return 0;
 
@@ -1585,6 +1622,30 @@ static int create_desc_set_layout_bindings(struct pipeline *s, const struct pipe
         }
     }
 
+    {
+        for (int i = 0; i < vk->nb_framebuffers; i++) {
+            if (s->uniform_data) {
+                const VkDescriptorBufferInfo descriptor_buffer_info = {
+                    .buffer = s->uniform_buffer.vkbuf,
+                    .offset = 0,
+                    .range  = s->uniform_buffer.size,
+                };
+                const VkWriteDescriptorSet write_descriptor_set = {
+                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    .dstSet = s->desc_sets[i],
+                    .dstBinding = s->uniform_binding,
+                    .dstArrayElement = 0,
+                    .descriptorType = s->uniform_type,
+                    .descriptorCount = 1,
+                    .pBufferInfo = &descriptor_buffer_info,
+                    .pImageInfo = NULL,
+                    .pTexelBufferView = NULL,
+                };
+                vkUpdateDescriptorSets(vk->device, 1, &write_descriptor_set, 0, NULL);
+            }
+        }
+    }
+
     ngli_free(desc_set_layouts);
     return 0;
 }
@@ -1641,6 +1702,39 @@ static int create_command_pool_and_buffers(struct pipeline *s)
     return 0;
 }
 
+static int build_uniform_pairs(struct pipeline *s, const struct pipeline_params *params)
+{
+    const struct program *program = params->program;
+
+    if (!program->uniforms)
+        return 0;
+
+    for (int i = 0; i < params->nb_uniforms; i++) {
+        const struct pipeline_uniform *uniform = &params->uniforms[i];
+        const struct program_variable_info *info = ngli_hmap_get(program->uniforms, uniform->name);
+        if (!info)
+            continue;
+
+        if (uniform->type != info->type && (uniform->type != ngli_type_int ||
+            (info->type != ngli_type_bool && info->type != ngli_type_int))) {
+            log(error, "uniform '%s' type does not match the type declared in the shader", uniform->name);
+            return ngl_error_invalid_arg;
+        }
+
+        const set_uniform_func set_func = set_uniform_func_map[uniform->type];
+        ngli_assert(set_func);
+        struct uniform_pair pair = {
+            .location = info->location,
+            .uniform = *uniform,
+            .set = set_func,
+        };
+        if (!ngli_darray_push(&s->uniform_pairs, &pair))
+            return ngl_error_memory;
+    }
+
+    return 0;
+}
+
 int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pipeline_params *params)
 {
     int ret;
@@ -1651,7 +1745,7 @@ int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pip
     s->compute  = params->compute;
     s->program  = params->program;
 
-    //ngli_darray_init(&s->uniform_pairs, sizeof(struct uniform_pair), 0);
+    ngli_darray_init(&s->uniform_pairs, sizeof(struct uniform_pair), 0);
     ngli_darray_init(&s->texture_pairs, sizeof(struct texture_pair), 0);
     ngli_darray_init(&s->buffer_pairs,  sizeof(struct buffer_pair), 0);
     ngli_darray_init(&s->attribute_pairs, sizeof(struct attribute_pair), 0);
@@ -1661,6 +1755,10 @@ int ngli_pipeline_init(struct pipeline *s, struct ngl_ctx *ctx, const struct pip
         return ret;
 
     if ((ret = create_desc_set_layout_bindings(s, params)) < 0)
+        return ret;
+
+    ret = create_uniform_buffer(s, params);
+    if (ret < 0)
         return ret;
 
     if ((ret = create_pipeline_layout(s)) < 0)
