@@ -28,6 +28,7 @@
 #include "log.h"
 #include "nodegl.h"
 #include "nodes.h"
+#include "params.h"
 #include "pass.h"
 #include "topology.h"
 #include "utils.h"
@@ -152,6 +153,7 @@ static void render_draw(struct ngl_node *node)
 {
     struct render_priv *s = node->priv_data;
     ngli_pass_exec(&s->pass);
+    &s->pass;
 }
 
 const struct node_class ngli_render_class = {
