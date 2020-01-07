@@ -13,5 +13,5 @@ layout(binding = 0, std140) uniform ngl {
 layout(binding = 1) uniform sampler2D tex0_sampler;
 
 void main() {
-    out_color = texture(tex0_sampler, tex_coord) * (tex0_ts / 30.0);
+    out_color = texture(tex0_sampler, tex_coord);
 }

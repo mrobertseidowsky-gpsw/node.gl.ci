@@ -170,7 +170,7 @@ def vkparticules(cfg, nb_particles=2048, nb_thread=16):
 
     animkf = [ngl.AnimKeyFrameFloat(0, 0),
               ngl.AnimKeyFrameFloat(cfg.duration, 1)]
-    time = ngl.UniformFloat(anim=ngl.AnimatedFloat(animkf))
+    time = ngl.AnimatedFloat(animkf)
     duration = ngl.UniformFloat(cfg.duration)
     compute_program = ngl.ComputeProgram(compute=cfg.get_comp('vkparticules'))
 
@@ -201,7 +201,7 @@ def vkparticules(cfg, nb_particles=2048, nb_thread=16):
     render.update_instance_attributes(position=positions_ref)
 
     group = ngl.Group()
-    group.add_children(compute, render)
+    group.add_children(compute)
 
     return ngl.Camera(group)
 

@@ -9,13 +9,13 @@ layout(location = 0) in vec3 ngl_position;
 
 layout(location = 1) in vec4 position;
 
-layout(push_constant) uniform ngl_block {
-    mat4 modelview_matrix;
-    mat4 projection_matrix;
-} ngl;
+layout(binding = 0) uniform ngl {
+    mat4 ngl_modelview_matrix;
+    mat4 ngl_projection_matrix;
+};
 
 void main()
 {
-    gl_Position = ngl.projection_matrix * ngl.modelview_matrix * (vec4(ngl_position, 1.0) + position);
+    gl_Position = ngl_projection_matrix * ngl_modelview_matrix * (vec4(ngl_position, 1.0) + position);
 }
 

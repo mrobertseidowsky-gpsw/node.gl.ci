@@ -1928,6 +1928,7 @@ void ngli_pipeline_exec(struct pipeline *s)
 
     vkCmdBindPipeline(cmd_buf, s->bind_point, s->pipeline);
 
+    if (s->type == NGLI_PIPELINE_TYPE_GRAPHICS) {
     const float *rgba = vk->config.clear_color;
     VkClearValue clear_color = {.color.float32={rgba[0], rgba[1], rgba[2], rgba[3]}};
 
@@ -1964,8 +1965,11 @@ void ngli_pipeline_exec(struct pipeline *s)
     vkCmdBindVertexBuffers(cmd_buf, 0, nb_vertex_buffers, vertex_buffers, vertex_offsets);
 
     if (s->desc_sets) {
+        LOG(ERROR, "bind> %d", s->type == NGLI_PIPELINE_TYPE_GRAPHICS);
         vkCmdBindDescriptorSets(cmd_buf, s->bind_point, s->pipeline_layout, 0, 1, &s->desc_sets[vk->img_index], 0, NULL);
+        LOG(ERROR, "bind<");
     }
+
 
     struct pipeline_graphics *graphics = &s->graphics;
     struct buffer *indices = graphics->indices;
@@ -1979,12 +1983,61 @@ void ngli_pipeline_exec(struct pipeline *s)
     }
 
     vkCmdEndRenderPass(cmd_buf);
+    } else {
+        struct pipeline_compute *compute = &s->compute;
+    if (s->desc_sets) {
+        LOG(ERROR, "bind> %d", s->type == NGLI_PIPELINE_TYPE_GRAPHICS);
+        vkCmdBindDescriptorSets(cmd_buf, s->bind_point, s->pipeline_layout, 0, 1, &s->desc_sets[vk->img_index], 0, NULL);
+        LOG(ERROR, "bind<");
+    }
+
+        vkCmdDispatch(cmd_buf, compute->nb_group_x, compute->nb_group_y, compute->nb_group_z);
+    }
 
     ret = vkEndCommandBuffer(cmd_buf);
     if (ret != VK_SUCCESS)
         return;
 
     ngli_darray_push(&vk->command_buffers, &cmd_buf);
+
+
+
+#if 0
+    ///
+    //    //
+    struct ngl_ctx *ctx = node->ctx;
+    struct glcontext *vk = ctx->glcontext;
+    struct compute_priv *s = node->priv_data;
+    struct pipeline *pipeline = &s->pipeline;
+
+    VkCommandBuffer cmd_buf = pipeline->command_buffers[vk->img_index];
+
+    VkCommandBufferBeginInfo command_buffer_begin_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        .flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT,
+    };
+
+    VkResult vkret = vkBeginCommandBuffer(cmd_buf, &command_buffer_begin_info);
+    if (vkret != VK_SUCCESS)
+        return;
+
+    int ret = ngli_pipeline_bind(&s->pipeline);
+    if (ret < 0) {
+        LOG(ERROR, "could not bind pipeline");
+    }
+
+
+    ret = ngli_pipeline_unbind(&s->pipeline);
+    if (ret < 0) {
+        LOG(ERROR, "could not unbind pipeline");
+    }
+
+    vkret = vkEndCommandBuffer(cmd_buf);
+    if (vkret != VK_SUCCESS)
+        return;
+
+    vk->command_buffers[vk->nb_command_buffers++] = cmd_buf;
+#endif
 }
 
 void ngli_pipeline_reset(struct pipeline *s)
