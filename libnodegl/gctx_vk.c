@@ -22,43 +22,54 @@
 #include <string.h>
 
 #include "gctx.h"
+#include "log.h"
 
 void ngli_gctx_set_rendertarget(struct ngl_ctx *s, struct rendertarget *rt)
 {
+    s->rendertarget = rt;
 }
 
 struct rendertarget *ngli_gctx_get_rendertarget(struct ngl_ctx *s)
 {
+    return s->rendertarget;
 }
 
 void ngli_gctx_set_viewport(struct ngl_ctx *s, const int *viewport)
 {
+    memcpy(&s->viewport, viewport, sizeof(s->viewport));
 }
 
 void ngli_gctx_get_viewport(struct ngl_ctx *s, int *viewport)
 {
+    memcpy(viewport, &s->viewport, sizeof(s->viewport));
 }
 
 void ngli_gctx_set_scissor(struct ngl_ctx *s, const int *scissor)
 {
+    LOG(ERROR, "stub");
 }
 
 void ngli_gctx_set_clear_color(struct ngl_ctx *s, const float *color)
 {
+    memcpy(s->clear_color, color, sizeof(s->clear_color));
 }
 
 void ngli_gctx_get_clear_color(struct ngl_ctx *s, float *color)
 {
+    memcpy(color, &s->clear_color, sizeof(s->clear_color));
 }
 
 void ngli_gctx_clear_color(struct ngl_ctx *s)
 {
+    LOG(ERROR, "stub");
 }
 
 void ngli_gctx_clear_depth_stencil(struct ngl_ctx *s)
 {
+    LOG(ERROR, "stub");
 }
 
 void ngli_gctx_invalidate_depth_stencil(struct ngl_ctx *s)
 {
+    LOG(ERROR, "stub");
 }

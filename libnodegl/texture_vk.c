@@ -418,6 +418,9 @@ int ngli_texture_generate_mipmap(struct texture *s)
 
 void ngli_texture_reset(struct texture *s)
 {
+    if (!s->ctx)
+        return;
+
     struct glcontext *gl = s->ctx->glcontext;
     if (!gl)
         return;
