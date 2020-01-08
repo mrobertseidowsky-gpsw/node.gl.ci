@@ -232,6 +232,7 @@ static void copy_reflection_object(struct program_variable_info *dst, const glsl
     /* access */
     const glslang::TType *type = src->getType();
     if (type) {
+        LOG(ERROR, ">>>%s", type->getCompleteString().c_str());
         if (type->isStruct()) {
         const glslang::TTypeList* list = type->getStruct();
         for (int i = 0; i < list->size(); i++) {

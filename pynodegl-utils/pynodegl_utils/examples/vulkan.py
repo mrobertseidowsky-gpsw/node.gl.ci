@@ -184,8 +184,8 @@ def vkparticules(cfg, nb_particles=2048, nb_thread=16):
     positions_ref = ngl.BufferVec3(block=comp_result, block_field=0)
 
     compute.update_blocks(
-        parameters=input_parameters,
-        result=comp_result
+        Parameters=input_parameters,
+        Output=comp_result
     )
 
     quad_width = 0.01
@@ -201,7 +201,7 @@ def vkparticules(cfg, nb_particles=2048, nb_thread=16):
     render.update_instance_attributes(position=positions_ref)
 
     group = ngl.Group()
-    group.add_children(compute)
+    group.add_children(compute, render)
 
     return ngl.Camera(group)
 
