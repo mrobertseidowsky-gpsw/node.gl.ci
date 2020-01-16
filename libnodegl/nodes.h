@@ -112,6 +112,13 @@ struct ngl_ctx {
     CVOpenGLESTextureRef capture_cvtexture;
 #endif
 
+
+#ifdef VULKAN_BACKEND
+    VkFramebuffer framebuffer;
+    VkRenderPass render_pass;
+    VkExtent2D render_area;
+#endif
+
     /* Shared fields */
     pthread_mutex_t lock;
     pthread_cond_t cond_ctl;

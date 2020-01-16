@@ -41,6 +41,7 @@ struct rendertarget {
 #ifdef VULKAN_BACKEND
     VkFramebuffer framebuffer;
     VkRenderPass render_pass;
+    VkExtent2D render_area;
 #else
     GLuint id;
     GLuint prev_id;

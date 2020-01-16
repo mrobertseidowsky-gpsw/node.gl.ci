@@ -119,7 +119,6 @@ static int rtt_init(struct ngl_node *node)
     return 0;
 }
 
-#ifndef VULKAN_BACKEND
 static int create_ms_rendertarget(struct ngl_node *node, int depth_format)
 {
     int ret = 0;
@@ -184,11 +183,7 @@ end:
     ngli_darray_reset(&attachments);
     return ret;
 }
-#endif
 
-#ifdef VULKAN_BACKEND
-// TODO
-#else
 static int rtt_prefetch(struct ngl_node *node)
 {
     int ret = 0;
@@ -196,11 +191,13 @@ static int rtt_prefetch(struct ngl_node *node)
     struct glcontext *gl = ctx->glcontext;
     struct rtt_priv *s = node->priv_data;
 
+#ifndef VULKAN_BACKEND
     if (!(gl->features & NGLI_FEATURE_FRAMEBUFFER_OBJECT) && s->samples > 0) {
         LOG(WARNING, "context does not support the framebuffer object feature, "
             "multisample anti-aliasing will be disabled");
         s->samples = 0;
     }
+#endif
 
     if (!s->nb_color_textures) {
         LOG(ERROR, "at least one color texture must be specified");
@@ -347,6 +344,7 @@ static void rtt_draw(struct ngl_node *node)
 
     struct rendertarget *rt = s->samples > 0 ? &s->rt_ms : &s->rt;
     struct rendertarget *prev_rt = ngli_gctx_get_rendertarget(ctx);
+    LOG(ERROR, "coucou");
     ngli_gctx_set_rendertarget(ctx, rt);
 
     int prev_vp[4] = {0};
@@ -354,6 +352,7 @@ static void rtt_draw(struct ngl_node *node)
 
     const int vp[4] = {0, 0, s->width, s->height};
     ngli_gctx_set_viewport(ctx, vp);
+    LOG(ERROR, "%d %d", ctx->viewport[2], ctx->viewport[3]);
 
     float prev_clear_color[4] = {0};
     if (s->use_clear_color) {
@@ -402,18 +401,15 @@ static void rtt_release(struct ngl_node *node)
     ngli_darray_reset(&s->rt_ms_colors);
     ngli_texture_reset(&s->rt_ms_depth);
 }
-#endif
 
 const struct node_class ngli_rtt_class = {
     .id        = NGL_NODE_RENDERTOTEXTURE,
     .name      = "RenderToTexture",
     .init      = rtt_init,
-#ifndef VULKAN_BACKEND
     .prefetch  = rtt_prefetch,
     .update    = rtt_update,
     .draw      = rtt_draw,
     .release   = rtt_release,
-#endif
     .priv_size = sizeof(struct rtt_priv),
     .params    = rtt_params,
     .file      = __FILE__,

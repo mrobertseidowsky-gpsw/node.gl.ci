@@ -261,7 +261,7 @@ static int pipeline_graphics_init(struct pipeline *s, const struct pipeline_para
         .pColorBlendState = &colorblend_state_create_info,
         .pDynamicState = &dynamic_state_create_info,
         .layout = s->pipeline_layout,
-        .renderPass = vk->render_pass,
+        .renderPass = ctx->render_pass,
         .subpass = 0,
     };
 
@@ -803,10 +803,10 @@ void ngli_pipeline_exec(struct pipeline *s)
 
         VkRenderPassBeginInfo render_pass_begin_info = {
             .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-            .renderPass = vk->render_pass,
-            .framebuffer = vk->framebuffers[vk->img_index],
+            .renderPass = ctx->render_pass,
+            .framebuffer = ctx->framebuffer,
             .renderArea = {
-                .extent = vk->extent,
+                .extent = ctx->render_area,
             },
             .clearValueCount = 1,
             .pClearValues = &clear_color,
@@ -814,9 +814,10 @@ void ngli_pipeline_exec(struct pipeline *s)
 
         vkCmdBeginRenderPass(cmd_buf, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
+        LOG(ERROR, "viewport %d %d", ctx->viewport[2], ctx->viewport[3]);
         VkViewport viewport = {
-            .width = vk->config.width,
-            .height = vk->config.height,
+            .width = ctx->viewport[2],
+            .height = ctx->viewport[3],
             .minDepth = 0.f,
             .maxDepth = 1.f,
         };

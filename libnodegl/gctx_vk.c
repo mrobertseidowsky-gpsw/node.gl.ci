@@ -27,6 +27,18 @@
 void ngli_gctx_set_rendertarget(struct ngl_ctx *s, struct rendertarget *rt)
 {
     s->rendertarget = rt;
+    if (rt) {
+        LOG(ERROR, "go");
+        s->framebuffer = rt->framebuffer;
+        s->render_pass = rt->render_pass;
+        s->render_area = rt->render_area;
+    } else {
+        LOG(ERROR, "back");
+        struct glcontext *vk = s->glcontext;
+        s->framebuffer = vk->framebuffers[vk->img_index];
+        s->render_pass = vk->render_pass;
+        s->render_area = vk->extent;
+    }
 }
 
 struct rendertarget *ngli_gctx_get_rendertarget(struct ngl_ctx *s)
@@ -36,7 +48,7 @@ struct rendertarget *ngli_gctx_get_rendertarget(struct ngl_ctx *s)
 
 void ngli_gctx_set_viewport(struct ngl_ctx *s, const int *viewport)
 {
-    memcpy(&s->viewport, viewport, sizeof(s->viewport));
+    memcpy(s->viewport, viewport, sizeof(s->viewport));
 }
 
 void ngli_gctx_get_viewport(struct ngl_ctx *s, int *viewport)

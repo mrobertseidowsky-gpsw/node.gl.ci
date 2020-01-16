@@ -104,6 +104,7 @@ int ngli_rendertarget_init(struct rendertarget *s, struct ngl_ctx *ctx, const st
     VkResult res = vkCreateRenderPass(vk->device, &render_pass_create_info, NULL, &s->render_pass);
     if (res != VK_SUCCESS)
         return -1;
+    s->render_area = (VkExtent2D){s->width, s->height};
 
     VkImageView *attachments = ngli_calloc(params->nb_attachments, sizeof(*attachments));
     if (!attachments)
@@ -124,6 +125,7 @@ int ngli_rendertarget_init(struct rendertarget *s, struct ngl_ctx *ctx, const st
         .height = s->height,
         .layers = 1
     };
+
 
     res = vkCreateFramebuffer(vk->device, &framebuffer_create_info, NULL, &s->framebuffer);
     if (res != VK_SUCCESS)

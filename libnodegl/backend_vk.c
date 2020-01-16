@@ -1162,6 +1162,10 @@ static int vk_pre_draw(struct ngl_ctx *s, double t)
     if (ret < 0)
         return ret;
 
+    s->framebuffer = vk->framebuffers[vk->img_index];
+    s->render_pass = vk->render_pass;
+    memcpy(s->viewport, s->config.viewport, sizeof(s->viewport));
+
     ret = vk_clear(vk);
     if (ret < 0)
         return ret;
