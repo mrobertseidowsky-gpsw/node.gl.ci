@@ -157,16 +157,13 @@ static int create_ms_rendertarget(struct ngl_node *node, int depth_format)
         }
     }
 
+    struct texture *depth_attachment = NULL;
     if (depth_format != NGLI_FORMAT_UNDEFINED) {
         attachment_params.format = depth_format;
         ret = ngli_texture_init(&s->rt_ms_depth, ctx, &attachment_params);
         if (ret < 0)
             goto end;
-        struct texture *rt_ms_depth = &s->rt_ms_depth;
-        if (!ngli_darray_push(&attachments, &rt_ms_depth)) {
-            ret = NGL_ERROR_MEMORY;
-            goto end;
-        }
+        depth_attachment = &s->rt_ms_depth;
     }
 
     struct rendertarget_params rt_params = {
@@ -174,6 +171,7 @@ static int create_ms_rendertarget(struct ngl_node *node, int depth_format)
         .height = s->height,
         .nb_attachments = ngli_darray_count(&attachments),
         .attachments = ngli_darray_data(&attachments),
+        .depth_attachment = depth_attachment,
     };
     ret = ngli_rendertarget_init(&s->rt_ms, ctx, &rt_params);
     if (ret < 0)
@@ -244,15 +242,13 @@ static int rtt_prefetch(struct ngl_node *node)
     }
 
     int depth_format = NGLI_FORMAT_UNDEFINED;
+    const struct texture *depth_attachment = NULL;
     if (s->depth_texture) {
         const struct texture_priv *depth_texture_priv = s->depth_texture->priv_data;
         const struct texture *depth_texture = &depth_texture_priv->texture;
         const struct texture_params *depth_texture_params = &depth_texture->params;
         depth_format = depth_texture_params->format;
-        if (!ngli_darray_push(&attachments, &depth_texture)) {
-            ret = NGL_ERROR_MEMORY;
-            goto end;
-        }
+        depth_attachment = depth_texture;
     } else {
         if (s->features & FEATURE_STENCIL)
             depth_format = NGLI_FORMAT_D24_UNORM_S8_UINT;
@@ -265,10 +261,7 @@ static int rtt_prefetch(struct ngl_node *node)
             ret = ngli_texture_init(rt_depth, ctx, &attachment_params);
             if (ret < 0)
                 goto end;
-            if (!ngli_darray_push(&attachments, &rt_depth)) {
-                ret = NGL_ERROR_MEMORY;
-                goto end;
-            }
+            depth_attachment = rt_depth;
             if (!(s->features & FEATURE_NO_CLEAR))
                 s->invalidate_depth_stencil = 1;
         }
@@ -279,6 +272,7 @@ static int rtt_prefetch(struct ngl_node *node)
         .height = s->height,
         .nb_attachments = ngli_darray_count(&attachments),
         .attachments = ngli_darray_data(&attachments),
+        .depth_attachment = depth_attachment,
     };
     ret = ngli_rendertarget_init(&s->rt, ctx, &rt_params);
     if (ret < 0)

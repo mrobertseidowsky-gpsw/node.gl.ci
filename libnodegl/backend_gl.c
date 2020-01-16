@@ -62,13 +62,14 @@ static int offscreen_rendertarget_init(struct ngl_ctx *s)
     if (ret < 0)
         return ret;
 
-    const struct texture *attachments[] = {&s->rt_color, &s->rt_depth};
+    const struct texture *attachments[] = {&s->rt_color};
     const int nb_attachments = NGLI_ARRAY_NB(attachments);
     struct rendertarget_params rt_params = {
         .width = config->width,
         .height = config->height,
         .nb_attachments = nb_attachments,
         .attachments = attachments,
+        .depth_attachment = &s->rt_depth,
     };
     ret = ngli_rendertarget_init(&s->rt, s, &rt_params);
     if (ret < 0)

@@ -31,6 +31,7 @@ struct rendertarget_params {
     int height;
     int nb_attachments;
     const struct texture **attachments;
+    const struct texture *depth_attachment;
 };
 
 struct rendertarget {

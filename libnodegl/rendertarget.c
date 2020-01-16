@@ -105,23 +105,21 @@ int ngli_rendertarget_init(struct rendertarget *s, struct ngl_ctx *ctx, const st
 
         GLenum attachment_index = get_gl_attachment_index(attachment->format);
         const int is_color_attachment = attachment_index == GL_COLOR_ATTACHMENT0;
-        if (is_color_attachment) {
-            if (s->nb_color_attachments >= gl->max_color_attachments) {
-                LOG(ERROR, "could not attach color buffer %d (maximum %d)",
-                    s->nb_color_attachments, gl->max_color_attachments);
-                goto done;
-            }
-            attachment_index = attachment_index + s->nb_color_attachments++;
+        if (!is_color_attachment) {
+            LOG(ERROR, "invalid color attachment format: 0x%x", attachment->format);
+            return NGL_ERROR_INVALID_USAGE;
         }
+
+        if (s->nb_color_attachments >= gl->max_color_attachments) {
+            LOG(ERROR, "could not attach color buffer %d (maximum %d)",
+                s->nb_color_attachments, gl->max_color_attachments);
+            goto done;
+        }
+        attachment_index = attachment_index + s->nb_color_attachments++;
 
         switch (attachment->target) {
         case GL_RENDERBUFFER:
-            if (gl->backend == NGL_BACKEND_OPENGLES && gl->version < 300 && attachment_index == GL_DEPTH_STENCIL_ATTACHMENT) {
-                ngli_glFramebufferRenderbuffer(gl, GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, attachment->id);
-                ngli_glFramebufferRenderbuffer(gl, GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, attachment->id);
-            } else {
-                ngli_glFramebufferRenderbuffer(gl, GL_FRAMEBUFFER, attachment_index, GL_RENDERBUFFER, attachment->id);
-            }
+            ngli_glFramebufferRenderbuffer(gl, GL_FRAMEBUFFER, attachment_index, GL_RENDERBUFFER, attachment->id);
             break;
         case GL_TEXTURE_2D:
             ngli_glFramebufferTexture2D(gl, GL_FRAMEBUFFER, attachment_index, GL_TEXTURE_2D, attachment->id, 0);
@@ -130,6 +128,26 @@ int ngli_rendertarget_init(struct rendertarget *s, struct ngl_ctx *ctx, const st
             for (int face = 0; face < 6; face++)
                 ngli_glFramebufferTexture2D(gl, GL_FRAMEBUFFER, attachment_index++, GL_TEXTURE_CUBE_MAP_POSITIVE_X + face, attachment->id, 0);
             s->nb_color_attachments += 5;
+            break;
+        default:
+            ngli_assert(0);
+        }
+    }
+
+    if (params->depth_attachment) {
+        const struct texture *attachment = params->depth_attachment;
+        GLenum attachment_index = get_gl_attachment_index(attachment->format);
+        switch (attachment->target) {
+        case GL_RENDERBUFFER:
+            if (gl->backend == NGL_BACKEND_OPENGLES && gl->version < 300 && attachment_index == GL_DEPTH_STENCIL_ATTACHMENT) {
+                ngli_glFramebufferRenderbuffer(gl, GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, attachment->id);
+                ngli_glFramebufferRenderbuffer(gl, GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_RENDERBUFFER, attachment->id);
+            } else {
+                ngli_glFramebufferRenderbuffer(gl, GL_FRAMEBUFFER, attachment_index, GL_RENDERBUFFER, attachment->id);
+            }
+        break;
+        case GL_TEXTURE_2D:
+            ngli_glFramebufferTexture2D(gl, GL_FRAMEBUFFER, attachment_index, GL_TEXTURE_2D, attachment->id, 0);
             break;
         default:
             ngli_assert(0);
