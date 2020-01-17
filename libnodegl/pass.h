@@ -80,6 +80,7 @@ struct pass {
     struct darray pipeline_textures;
     struct darray pipeline_buffers;
     struct pipeline pipeline;
+    struct darray pipelines;
 
     int modelview_matrix_index;
     int projection_matrix_index;
@@ -87,6 +88,7 @@ struct pass {
 };
 
 int ngli_pass_init(struct pass *s, struct ngl_ctx *ctx, const struct pass_params *params);
+int ngli_pass_init_ressources(struct pass *s);
 void ngli_pass_uninit(struct pass *s);
 int ngli_pass_update(struct pass *s, double t);
 int ngli_pass_exec(struct pass *s);

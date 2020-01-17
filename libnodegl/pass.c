@@ -437,6 +437,8 @@ static int pass_graphics_init(struct pass *s)
     struct ngl_ctx *ctx = s->ctx;
     const struct pass_params *params = &s->params;
 
+    ngli_darray_init(&s->pipelines, sizeof(struct pipeline), 0);
+
     s->pipeline_type = NGLI_PIPELINE_TYPE_GRAPHICS;
 
     if (!s->pipeline_program) {
@@ -554,9 +556,12 @@ int ngli_pass_init(struct pass *s, struct ngl_ctx *ctx, const struct pass_params
         (ret = register_blocks(s)) < 0)
         return ret;
 
+    struct pipeline_graphics graphics = s->pipeline_graphics;
+    graphics.config = ctx->graphicconfig;
+
     struct pipeline_params pipeline_params = {
         .type          = s->pipeline_type,
-        .graphics      = s->pipeline_graphics,
+        .graphics      = graphics,
         .compute       = s->pipeline_compute,
         .program       = s->pipeline_program,
         .attributes    = ngli_darray_data(&s->pipeline_attributes),
@@ -603,6 +608,53 @@ int ngli_pass_init(struct pass *s, struct ngl_ctx *ctx, const struct pass_params
     return 0;
 }
 
+static void print(struct graphicconfig *config)
+{
+        LOG(ERROR, "%d %d %d %d %d %d %d",
+            config->blend,
+            config->blend_dst_factor,
+            config->blend_src_factor,
+            config->blend_dst_factor_a,
+            config->blend_src_factor_a,
+            config->blend_op,
+            config->blend_op_a);
+}
+
+int ngli_pass_init_ressources(struct pass *s)
+{
+    struct ngl_ctx *ctx = s->ctx;
+
+    struct pipeline *pipeline = ngli_darray_push(&s->pipelines, NULL);
+    if (!pipeline)
+        return NGL_ERROR_MEMORY;
+
+    struct pipeline_graphics graphics = s->pipeline_graphics;
+    graphics.config = ctx->graphicconfig;
+
+    struct pipeline_params pipeline_params = {
+        .type          = s->pipeline_type,
+        .graphics      = graphics,
+        .compute       = s->pipeline_compute,
+        .program       = s->pipeline_program,
+        .attributes    = ngli_darray_data(&s->pipeline_attributes),
+        .nb_attributes = ngli_darray_count(&s->pipeline_attributes),
+        .uniforms      = ngli_darray_data(&s->pipeline_uniforms),
+        .nb_uniforms   = ngli_darray_count(&s->pipeline_uniforms),
+        .textures      = ngli_darray_data(&s->pipeline_textures),
+        .nb_textures   = ngli_darray_count(&s->pipeline_textures),
+        .buffers       = ngli_darray_data(&s->pipeline_buffers),
+        .nb_buffers    = ngli_darray_count(&s->pipeline_buffers),
+    };
+
+    int ret = ngli_pipeline_init(pipeline, ctx, &pipeline_params);
+    if (ret < 0)
+        return ret;
+    LOG(ERROR, "push it good");
+    print(&graphics.config);
+
+    return 0;
+}
+
 #define NODE_TYPE_DEFAULT 0
 #define NODE_TYPE_BLOCK   1
 #define NODE_TYPE_BUFFER  2
@@ -632,6 +684,13 @@ void ngli_pass_uninit(struct pass *s)
 {
     if (!s->ctx)
         return;
+
+    struct pipeline *pipelines = ngli_darray_data(&s->pipelines);
+    int nb_pipelines = ngli_darray_count(&s->pipelines);
+    for (int i = 0; i < nb_pipelines; i++) {
+        struct pipeline *pipeline = &pipelines[i];
+        ngli_pipeline_reset(pipeline);
+    }
 
     ngli_pipeline_reset(&s->pipeline);
 
@@ -698,10 +757,33 @@ int ngli_pass_update(struct pass *s, double t)
     return 0;
 }
 
+static struct pipeline *get_pipeline(struct pass *s)
+{
+    struct ngl_ctx *ctx = s->ctx;
+
+    struct pipeline *pipelines = ngli_darray_data(&s->pipelines);
+    int nb_pipelines = ngli_darray_count(&s->pipelines);
+    for (int i = 0; i < nb_pipelines; i++) {
+        struct pipeline *pipeline = &pipelines[i];
+        struct pipeline_graphics *graphics = &pipeline->graphics;
+        print(&graphics->config);
+        print(&ctx->graphicconfig);
+
+        if (!memcmp(&graphics->config, &ctx->graphicconfig, sizeof(ctx->graphicconfig) - 4*4)) {
+            return pipeline;
+        }
+    }
+    return NULL;
+}
+
 int ngli_pass_exec(struct pass *s)
 {
     struct ngl_ctx *ctx = s->ctx;
-    struct pipeline *pipeline = &s->pipeline;
+    struct pipeline *pipeline = get_pipeline(s);
+    if (!pipeline) {
+        LOG(ERROR, "could not find a compatible pipeline");
+        return NGL_ERROR_BUG;
+    }
 
     const float *modelview_matrix = ngli_darray_tail(&ctx->modelview_matrix_stack);
     const float *projection_matrix = ngli_darray_tail(&ctx->projection_matrix_stack);
