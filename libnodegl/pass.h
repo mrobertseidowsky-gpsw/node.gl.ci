@@ -79,7 +79,6 @@ struct pass {
     struct darray pipeline_uniforms;
     struct darray pipeline_textures;
     struct darray pipeline_buffers;
-    struct pipeline pipeline;
     struct darray pipelines;
 
     int modelview_matrix_index;
