@@ -506,6 +506,31 @@ static int create_desc_set_layout_bindings(struct pipeline *s, const struct pipe
         }
     }
 
+    for (int i = 0; i < params->nb_textures; i++) {
+        const struct pipeline_texture *pipeline_texture = &params->textures[i];
+        struct texture *texture = pipeline_texture->texture;
+        if (!texture)
+            continue;
+
+        for (int i = 0; i < vk->nb_framebuffers; i++) {
+            VkDescriptorImageInfo image_info = {
+                .imageLayout = texture->image_layout,
+                .imageView   = texture->image_view,
+                .sampler     = texture->image_sampler,
+            };
+            VkWriteDescriptorSet write_descriptor_set = {
+                .sType            = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .dstSet           = s->desc_sets[i],
+                .dstBinding       = pipeline_texture->binding,
+                .dstArrayElement  = 0,
+                .descriptorType   = get_descriptor_type(pipeline_texture->type),
+                .descriptorCount  = 1,
+                .pImageInfo       = &image_info,
+            };
+            vkUpdateDescriptorSets(vk->device, 1, &write_descriptor_set, 0, NULL);
+        }
+    }
+
     {
         for (int i = 0; i < vk->nb_framebuffers; i++) {
             if (s->uniform_data) {
