@@ -24,12 +24,10 @@
 #include "log.h"
 #include "utils.h"
 #include "format.h"
-#include "glincludes.h"
-#include "glcontext.h"
 #include "texture.h"
 #include "nodes.h"
 
-static const GLint vk_filter_map[NGLI_NB_FILTER] = {
+static const VkFilter vk_filter_map[NGLI_NB_FILTER] = {
     [NGLI_FILTER_NEAREST] = VK_FILTER_NEAREST,
     [NGLI_FILTER_LINEAR]  = VK_FILTER_LINEAR,
 };
@@ -39,12 +37,13 @@ VkFilter ngli_texture_get_vk_filter(int filter)
     return vk_filter_map[filter];
 }
 
-static const GLint vk_mipmap_mode_map[NGLI_NB_FILTER] = {
-    [NGLI_FILTER_NEAREST] = VK_SAMPLER_MIPMAP_MODE_NEAREST,
-    [NGLI_FILTER_LINEAR]  = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+static const VkSamplerMipmapMode vk_mipmap_mode_map[NGLI_NB_MIPMAP] = {
+    [NGLI_MIPMAP_FILTER_NONE]    = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+    [NGLI_MIPMAP_FILTER_NEAREST] = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+    [NGLI_MIPMAP_FILTER_LINEAR]  = VK_SAMPLER_MIPMAP_MODE_LINEAR,
 };
 
-VkFilter ngli_texture_get_vk_mipmap_mode(int mipmap_filter)
+VkSamplerMipmapMode ngli_texture_get_vk_mipmap_mode(int mipmap_filter)
 {
     return vk_mipmap_mode_map[mipmap_filter];
 }
