@@ -70,7 +70,6 @@ LIB_OBJS = animation.o              \
            dot.o                    \
            drawutils.o              \
            format.o                 \
-           gpu_bench.o              \
            graphicconfig.o          \
            hmap.o                   \
            hwupload.o               \
@@ -130,6 +129,7 @@ LIB_OBJS += backend_vk.o            \
             buffer_vk.o             \
             gctx_vk.o               \
             glstate_vk.o            \
+            gpu_bench_vk.o          \
             hwconv_vk.o             \
             pipeline_vk.o           \
             program_vk.o            \
@@ -143,6 +143,7 @@ LIB_OBJS += backend_gl.o            \
             gctx.o                  \
             glcontext.o             \
             glstate.o               \
+            gpu_bench.o             \
             hwconv.o                \
             pipeline.o              \
             program.o               \
