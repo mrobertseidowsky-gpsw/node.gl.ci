@@ -445,8 +445,6 @@ static int pass_graphics_init(struct pass *s)
     struct ngl_ctx *ctx = s->ctx;
     const struct pass_params *params = &s->params;
 
-    ngli_darray_init(&s->pipeline_descs, sizeof(struct pipeline_desc), 0);
-
     s->pipeline_type = NGLI_PIPELINE_TYPE_GRAPHICS;
 
     if (!s->pipeline_program) {
@@ -549,6 +547,8 @@ int ngli_pass_init(struct pass *s, struct ngl_ctx *ctx, const struct pass_params
     ngli_darray_init(&s->pipeline_uniforms, sizeof(struct pipeline_uniform), 0);
     ngli_darray_init(&s->pipeline_buffers, sizeof(struct pipeline_buffer), 0);
 
+    ngli_darray_init(&s->pipeline_descs, sizeof(struct pipeline_desc), 0);
+
     if (params->program) {
         struct program_priv *program_priv = params->program->priv_data;
         s->pipeline_program = &program_priv->program;
@@ -561,7 +561,7 @@ int ngli_pass_init(struct pass *s, struct ngl_ctx *ctx, const struct pass_params
         return ret;
 
     if (params->geometry) {
-        ret = pass_compute_init(s);
+        ret = pass_graphics_init(s);
         if (ret < 0)
             return ret;
     } else {
@@ -674,6 +674,8 @@ int ngli_pass_init_ressources(struct pass *s)
     LOG(ERROR, "push it good");
     print(&graphics.config);
 
+
+    ngli_darray_init(&pipeline_desc->texture_infos, sizeof(struct texture_info), 0);
 
         pipeline_desc->modelview_matrix_index = ngli_pipeline_get_uniform_index(pipeline, "ngl_modelview_matrix");
         pipeline_desc->projection_matrix_index = ngli_pipeline_get_uniform_index(pipeline, "ngl_projection_matrix");
