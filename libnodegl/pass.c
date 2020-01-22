@@ -44,7 +44,7 @@
 #include "type.h"
 #include "utils.h"
 
-struct pipeline_info {
+struct pipeline_desc {
     struct pipeline pipeline;
     int modelview_matrix_index;
     int projection_matrix_index;
