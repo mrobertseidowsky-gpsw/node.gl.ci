@@ -70,6 +70,7 @@ LIB_OBJS = animation.o              \
            dot.o                    \
            drawutils.o              \
            format.o                 \
+           gpu_bench.o              \
            graphicconfig.o          \
            hmap.o                   \
            hwupload.o               \
