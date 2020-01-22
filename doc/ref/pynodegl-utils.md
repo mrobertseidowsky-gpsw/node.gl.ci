@@ -190,7 +190,6 @@ def demo(cfg, intro='Hello World!'):
 
 ![text widget](img/widget-text.png)
 
-<<<<<<< HEAD
 ## Viewer hooks
 
 When using the `--hooks-dir` option, `ngl-viewer` will execute various hook
@@ -199,23 +198,8 @@ synchronization with external devices.
 
 Following are the hook scripts or programs that will be executed and their
 expected behaviour.
-||||||| parent of e1b7e071... WIP: vulkan
-### hook.get_gl_backend
-=======
-### hook.get_backend
->>>>>>> e1b7e071... WIP: vulkan
 
-<<<<<<< HEAD
 ### hook.get_sessions
-||||||| parent of e1b7e071... WIP: vulkan
-`hook.get_gl_backend` does not take any argument. It must print on `stdout` the
-string `gl` or `gles`. It corresponds to the OpenGL backend specified in the
-scene configuration when constructed.
-=======
-`hook.get_backend` does not take any argument. It must print on `stdout` the
-string `gl` or `gles`. It corresponds to the OpenGL backend specified in the
-scene configuration when constructed.
->>>>>>> e1b7e071... WIP: vulkan
 
 `hook.get_sessions` does not take any argument. It must print on `stdout` all
 the available sessions. Each line represents one session. The first word of
@@ -225,17 +209,9 @@ line is a description of the session.
 **Example**:
 
 ```shell
-<<<<<<< HEAD
 $ ./hook.get_sessions
 X2fca1f2c device Foobar 3000
 Y5fd953df Smartphone 9000 GEN X
-||||||| parent of e1b7e071... WIP: vulkan
-$ android/hook.get_gl_backend
-gles
-=======
-$ android/hook.get_backend
-gles
->>>>>>> e1b7e071... WIP: vulkan
 ```
 
 ### hook.get_session_info
