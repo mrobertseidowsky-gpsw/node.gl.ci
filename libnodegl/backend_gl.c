@@ -290,64 +290,6 @@ static void capture_reset(struct ngl_ctx *s)
     s->capture_func = NULL;
 }
 
-static int gl_reconfigure(struct ngl_ctx *s, const struct ngl_config *config)
-{
-    struct glcontext *gl = s->glcontext;
-    struct ngl_config *current_config = &s->config;
-
-    ngli_glcontext_set_swap_interval(gl, config->swap_interval);
-    current_config->swap_interval = config->swap_interval;
-
-    current_config->set_surface_pts = config->set_surface_pts;
-
-    const int update_dimensions = current_config->width != config->width ||
-                                  current_config->height != config->height;
-    current_config->width = config->width;
-    current_config->height = config->height;
-
-    const int update_capture = !current_config->capture_buffer != !config->capture_buffer;
-    current_config->capture_buffer = config->capture_buffer;
-
-    if (config->offscreen) {
-        if (update_dimensions) {
-            offscreen_rendertarget_reset(s);
-            int ret = offscreen_rendertarget_init(s);
-            if (ret < 0)
-                return ret;
-        }
-
-        if (update_dimensions || update_capture) {
-            capture_reset(s);
-            int ret = capture_init(s);
-            if (ret < 0)
-                return ret;
-        }
-    } else {
-        int ret = ngli_glcontext_resize(gl);
-        if (ret < 0)
-            return ret;
-    }
-
-    const int *viewport = config->viewport;
-    if (viewport[2] > 0 && viewport[3] > 0) {
-        ngli_gctx_set_viewport(s, viewport);
-        memcpy(current_config->viewport, config->viewport, sizeof(config->viewport));
-    } else {
-        struct glcontext *gl = s->glcontext;
-        const int default_viewport[] = {0, 0, gl->width, gl->height};
-        ngli_gctx_set_viewport(s, default_viewport);
-    }
-
-    ngli_gctx_set_clear_color(s, config->clear_color);
-    memcpy(current_config->clear_color, config->clear_color, sizeof(config->clear_color));
-
-    const int scissor[] = {0, 0, gl->width, gl->height};
-    struct graphicconfig *graphicconfig = &s->graphicconfig;
-    memcpy(graphicconfig->scissor, scissor, sizeof(scissor));
-
-    return 0;
-}
-
 static int gl_configure(struct ngl_ctx *s, const struct ngl_config *config)
 {
     memcpy(&s->config, config, sizeof(s->config));
@@ -400,6 +342,36 @@ static int gl_configure(struct ngl_ctx *s, const struct ngl_config *config)
     return 0;
 }
 
+static int gl_resize(struct ngl_ctx *s, int width, int height, const int *viewport)
+{
+    struct glcontext *gl = s->glcontext;
+    struct ngl_config *config = &s->config;
+
+    if (config->offscreen)
+        return NGL_ERROR_INVALID_USAGE;
+
+    int ret = ngli_glcontext_resize(gl);
+    if (ret < 0)
+        return ret;
+    config->width = gl->width;
+    config->height = gl->height;
+
+    if (viewport && viewport[2] > 0 && viewport[3] > 0) {
+        ngli_gctx_set_viewport(s, viewport);
+        memcpy(config->viewport, viewport, sizeof(config->viewport));
+    } else {
+        struct glcontext *gl = s->glcontext;
+        const int default_viewport[] = {0, 0, gl->width, gl->height};
+        ngli_gctx_set_viewport(s, default_viewport);
+    }
+
+    const int scissor[] = {0, 0, gl->width, gl->height};
+    struct graphicconfig *graphicconfig = &s->graphicconfig;
+    memcpy(graphicconfig->scissor, scissor, sizeof(scissor));
+
+    return 0;
+}
+
 static int gl_pre_draw(struct ngl_ctx *s, double t)
 {
     ngli_gctx_clear_color(s);
@@ -442,8 +414,8 @@ static void gl_destroy(struct ngl_ctx *s)
 
 const struct backend ngli_backend_gl = {
     .name         = "OpenGL",
-    .reconfigure  = gl_reconfigure,
     .configure    = gl_configure,
+    .resize       = gl_resize,
     .pre_draw     = gl_pre_draw,
     .post_draw    = gl_post_draw,
     .destroy      = gl_destroy,
@@ -451,8 +423,8 @@ const struct backend ngli_backend_gl = {
 
 const struct backend ngli_backend_gles = {
     .name         = "OpenGL ES",
-    .reconfigure  = gl_reconfigure,
     .configure    = gl_configure,
+    .resize       = gl_resize,
     .pre_draw     = gl_pre_draw,
     .post_draw    = gl_post_draw,
     .destroy      = gl_destroy,

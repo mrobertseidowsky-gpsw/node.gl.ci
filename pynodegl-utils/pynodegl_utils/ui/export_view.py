@@ -84,6 +84,13 @@ class ExportView(QtWidgets.QWidget):
         self._exporter = None
 
     def enter(self):
+        cfg = self._get_scene_func()
+        if not cfg:
+            return
+
+        self._framerate = cfg['framerate']
+        self._aspect_ratio = cfg['aspect_ratio']
+
         self._check_settings()
 
     @QtCore.Slot()
@@ -103,16 +110,6 @@ class ExportView(QtWidgets.QWidget):
             self._warning_label.show()
         else:
             self._warning_label.hide()
-
-    @QtCore.Slot(tuple)
-    def set_frame_rate(self, fr):
-        self._framerate = fr
-        self._check_settings()
-
-    @QtCore.Slot(tuple)
-    def set_aspect_ratio(self, ar):
-        self._aspect_ratio = ar
-        self._check_settings()
 
     @QtCore.Slot(int)
     def _progress(self, value):
@@ -159,7 +156,7 @@ class ExportView(QtWidgets.QWidget):
         self._pgd.canceled.connect(self._cancel)
         self._exporter.progressed.connect(self._progress)
         self._exporter.failed.connect(self._fail)
-        self._exporter.finished.connect(self._finish)
+        self._exporter.export_finished.connect(self._finish)
 
         self._exporter.start()
 

@@ -30,7 +30,7 @@ from pynodegl_utils.config import Config
 from pynodegl_utils.scriptsmgr import ScriptsManager
 from pynodegl_utils.hooks import HooksController, HooksCaller
 
-from pynodegl_utils.ui.gl_view import GLView
+from pynodegl_utils.ui.player_view import PlayerView
 from pynodegl_utils.ui.graph_view import GraphView
 from pynodegl_utils.ui.export_view import ExportView
 from pynodegl_utils.ui.hooks_view import HooksView
@@ -62,7 +62,7 @@ class MainWindow(QtWidgets.QSplitter):
             geometry = QtCore.QRect(*rect)
             self.setGeometry(geometry)
 
-        gl_view = GLView(get_scene_func, self._config)
+        player_view = PlayerView(get_scene_func, self._config)
         graph_view = GraphView(get_scene_func, self._config)
         export_view = ExportView(get_scene_func, self._config)
         hooks_view = HooksView(self._hooks_caller)
@@ -70,7 +70,7 @@ class MainWindow(QtWidgets.QSplitter):
         serial_view = SerialView(get_scene_func)
 
         self._tabs = [
-            ('Player view', gl_view),
+            ('Player view', player_view),
             ('Graph view', graph_view),
             ('Export', export_view),
             ('Hooks', hooks_view),
@@ -90,19 +90,11 @@ class MainWindow(QtWidgets.QSplitter):
         self._scene_toolbar.sceneChanged.connect(self._scene_changed)
         self._scene_toolbar.sceneChanged.connect(self._scene_changed_hook)
         self._scene_toolbar.sceneChanged.connect(self._config.scene_changed)
-        self._scene_toolbar.aspectRatioChanged.connect(gl_view.set_aspect_ratio)
-        self._scene_toolbar.aspectRatioChanged.connect(export_view.set_aspect_ratio)
         self._scene_toolbar.aspectRatioChanged.connect(self._config.set_aspect_ratio)
-        self._scene_toolbar.samplesChanged.connect(gl_view.set_samples)
         self._scene_toolbar.samplesChanged.connect(self._config.set_samples)
-        self._scene_toolbar.frameRateChanged.connect(gl_view.set_frame_rate)
-        self._scene_toolbar.frameRateChanged.connect(graph_view.set_frame_rate)
-        self._scene_toolbar.frameRateChanged.connect(export_view.set_frame_rate)
         self._scene_toolbar.frameRateChanged.connect(self._config.set_frame_rate)
         self._scene_toolbar.logLevelChanged.connect(self._config.set_log_level)
-        self._scene_toolbar.clearColorChanged.connect(gl_view.set_clear_color)
         self._scene_toolbar.clearColorChanged.connect(self._config.set_clear_color)
-        self._scene_toolbar.backendChanged.connect(gl_view.set_backend)
         self._scene_toolbar.backendChanged.connect(self._config.set_backend)
         self._scene_toolbar.hudChanged.connect(self._config.set_hud)
 

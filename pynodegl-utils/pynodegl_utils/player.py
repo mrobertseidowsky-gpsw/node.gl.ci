@@ -136,7 +136,8 @@ class Player(QtCore.QThread):
 
     def _render(self):
         frame_index, frame_time = self._clock.get_playback_time_info()
-        self._viewer.draw(frame_time)
+        with QtCore.QMutexLocker(self._mutex):
+            self._viewer.draw(frame_time)
         if self._wait_first_frame:
             self._clock.reset_running_time()
             self._wait_first_frame = False
@@ -153,22 +154,20 @@ class Player(QtCore.QThread):
 
     def _handle_events(self):
         should_stop = False
-        self._mutex.lock()
-        if not self._events and not self._clock.is_running():
-            self._cond.wait(self._mutex)
-        while self._events:
-            event = self._events.pop(0)
-            should_stop = event()
-            if should_stop:
-                break
-        self._mutex.unlock()
+        with QtCore.QMutexLocker(self._mutex):
+            if not self._events and not self._clock.is_running():
+                self._cond.wait(self._mutex)
+            while self._events:
+                event = self._events.pop(0)
+                should_stop = event()
+                if should_stop:
+                    break
         return should_stop
 
     def _push_event(self, event):
-        self._mutex.lock()
-        self._events.append(event)
-        self._cond.wakeAll()
-        self._mutex.unlock()
+        with QtCore.QMutexLocker(self._mutex):
+            self._events.append(event)
+            self._cond.wakeAll()
 
     def draw(self):
         self._push_event(lambda: False)
@@ -196,7 +195,6 @@ class Player(QtCore.QThread):
         self._push_event(lambda: self._stop())
 
     def _stop(self):
-        self._is_stopped = True
         return True
 
     def seek(self, time):
@@ -217,79 +215,46 @@ class Player(QtCore.QThread):
         return False
 
     def resize(self, width, height):
-        self._push_event(lambda: self._resize(width, height))
-
-    def _resize(self, width, height):
-        self._width = width
-        self._height = height
-        self._configure_viewer()
-        return False
+        with QtCore.QMutexLocker(self._mutex):
+            self._width = width
+            self._height = height
+            viewport = misc.get_viewport(width, height, self._aspect_ratio)
+            self._viewer.resize(width, height, viewport)
 
     def set_scene(self, cfg):
-        self._push_event(lambda: self._set_scene(cfg))
+        with QtCore.QMutexLocker(self._mutex):
+            need_reconfigure = False
+            self._scene = cfg['scene']
+            self._framerate = cfg['framerate']
+            self._duration = cfg['duration']
+            self._aspect_ratio = cfg['aspect_ratio']
+            if self._clear_color != cfg['clear_color']:
+                self._clear_color = cfg['clear_color']
+                need_reconfigure = True
+            if self._samples != cfg['samples']:
+                self._samples = cfg['samples']
+                need_reconfigure = True
+            if self._backend != cfg['backend']:
+                self._backend = cfg['backend']
+                need_reconfigure = True
+            if need_reconfigure:
+                self._configure_viewer()
+            else:
+                viewport = misc.get_viewport(self._width, self._height, self._aspect_ratio)
+                self._viewer.resize(self._width, self._height, viewport)
+        self._push_event(lambda: self._set_scene())
 
-    def _set_scene(self, cfg):
-        if cfg is None:
-            self._pause()
-            self._scene = None
-            self._viewer.set_scene(None)
-            return False
-        self._scene = cfg['scene']
-        self._framerate = cfg['framerate']
-        self._duration = cfg['duration']
-        self._clear_color = cfg['clear_color']
-        self._aspect_ratio = cfg['aspect_ratio']
-        self._samples = cfg['samples']
-        if self._backend != cfg['backend']:
-            self._backend = cfg['backend']
-            self._viewer = ngl.Viewer()
+    def _set_scene(self):
         self._viewer.set_scene_from_string(self._scene)
-        self._configure_viewer()
         self._clock.configure(self._framerate, self._duration)
         self.onSceneMetadata.emit({'framerate': self._framerate, 'duration': self._duration})
         return False
 
     def reset_scene(self):
-        self._push_event(lambda: self._set_scene(None))
+        self._push_event(lambda: self._reset_scene())
 
-    def set_aspect_ratio(self, aspect_ratio):
-        self._push_event(lambda: self._set_aspect_ratio(aspect_ratio))
-
-    def _set_aspect_ratio(self, aspect_ratio):
-        self._aspect_ratio = aspect_ratio
-        self._resize(self._width, self._height)
-        return False
-
-    def set_samples(self, samples):
-        self._push_event(lambda: self._set_samples(samples))
-
-    def _set_samples(self, samples):
-        self._samples = samples
-        self._configure_viewer()
-        return False
-
-    def set_clear_color(self, color):
-        self._push_event(lambda: self._set_clear_color(color))
-
-    def _set_clear_color(self, clear_color):
-        self._clear_color = clear_color
-        self._configure_viewer()
-        return False
-
-    def set_framerate(self, framerate):
-        self._push_event(lambda: self._set_framerate(framerate))
-
-    def _set_framerate(self, framerate):
-        self._framerate = framerate
-        self._clock.configure(self._framerate, self._duration)
-        self.onSceneMetadata.emit({'framerate': self._framerate, 'duration': self._duration})
-        return False
-
-    def set_backend(self, backend):
-        self._push_event(lambda: self._set_backend(backend))
-
-    def _set_backend(self, backend):
-        self._backend = backend
-        self._viewer = ngl.Viewer()
-        self._configure_viewer()
+    def _reset_scene(self):
+        self._pause()
+        self._scene = None
+        self._viewer.set_scene(self._scene)
         return False

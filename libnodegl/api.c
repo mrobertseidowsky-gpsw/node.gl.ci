@@ -37,52 +37,100 @@
 #include "nodegl.h"
 #include "nodes.h"
 
-static int cmd_reconfigure(struct ngl_ctx *s, void *arg)
+#if defined(TARGET_IPHONE) || defined(TARGET_ANDROID)
+# define DEFAULT_BACKEND NGL_BACKEND_OPENGLES
+#else
+# define DEFAULT_BACKEND NGL_BACKEND_OPENGL
+#endif
+
+extern const struct backend ngli_backend_gl;
+extern const struct backend ngli_backend_gles;
+
+static const struct backend *backend_map[] = {
+    [NGL_BACKEND_OPENGL]   = &ngli_backend_gl,
+    [NGL_BACKEND_OPENGLES] = &ngli_backend_gles,
+};
+
+static int get_default_platform(void)
 {
-    struct ngl_config *config = arg;
-    struct ngl_config *current_config = &s->config;
-
-    if (config->platform == NGL_PLATFORM_AUTO)
-        config->platform = current_config->platform;
-    if (config->backend == NGL_BACKEND_AUTO)
-        config->backend = current_config->backend;
-
-    if (current_config->platform != config->platform ||
-        current_config->backend  != config->backend) {
-        LOG(ERROR, "backend or platform cannot be reconfigured");
-        return NGL_ERROR_UNSUPPORTED;
-    }
-
-    if (current_config->display   != config->display   ||
-        current_config->window    != config->window    ||
-        current_config->handle    != config->handle    ||
-        current_config->offscreen != config->offscreen ||
-        current_config->samples   != config->samples) {
-        if (s->scene)
-            ngli_node_detach_ctx(s->scene, s);
-        s->backend->destroy(s);
-        int ret = s->backend->configure(s, config);
-        if (ret < 0)
-            return ret;
-        if (s->scene)
-            ret = ngli_node_attach_ctx(s->scene, s);
-        if (ret < 0)
-            return ret;
-        return 0;
-    }
-
-    int ret = s->backend->reconfigure(s, config);
-    if (ret < 0)
-        LOG(ERROR, "unable to reconfigure %s", s->backend->name);
-    return ret;
+#if defined(TARGET_LINUX)
+    return NGL_PLATFORM_XLIB;
+#elif defined(TARGET_IPHONE)
+    return NGL_PLATFORM_IOS;
+#elif defined(TARGET_DARWIN)
+    return NGL_PLATFORM_MACOS;
+#elif defined(TARGET_ANDROID)
+    return NGL_PLATFORM_ANDROID;
+#elif defined(TARGET_MINGW_W64)
+    return NGL_PLATFORM_WINDOWS;
+#else
+    return NGL_ERROR_UNSUPPORTED;
+#endif
 }
 
 static int cmd_configure(struct ngl_ctx *s, void *arg)
 {
-    int ret = s->backend->configure(s, arg);
-    if (ret < 0)
-        LOG(ERROR, "unable to configure %s", s->backend->name);
-    return ret;
+    struct ngl_config *config = arg;
+
+    if (s->scene)
+        ngli_node_detach_ctx(s->scene, s);
+
+    if (s->backend) {
+        s->backend->destroy(s);
+        s->backend = NULL;
+    }
+
+    if (config->backend == NGL_BACKEND_AUTO)
+        config->backend = DEFAULT_BACKEND;
+
+    if (config->backend < 0 ||
+        config->backend >= NGLI_ARRAY_NB(backend_map) ||
+        !backend_map[config->backend]) {
+        LOG(ERROR, "unknown backend %d", config->backend);
+        return NGL_ERROR_INVALID_ARG;
+    }
+
+    const struct backend *backend = backend_map[config->backend];
+    LOG(INFO, "selected backend: %s", backend->name);
+
+    if (config->platform == NGL_PLATFORM_AUTO)
+        config->platform = get_default_platform();
+    if (config->platform < 0) {
+        LOG(ERROR, "can not determine which platform to use");
+        return config->platform;
+    }
+
+    int ret = backend->configure(s, config);
+    if (ret < 0) {
+        LOG(ERROR, "unable to configure %s", backend->name);
+        backend->destroy(s);
+        return ret;
+    }
+    s->backend = backend;
+
+    if (s->scene) {
+        ret = ngli_node_attach_ctx(s->scene, s);
+        if (ret < 0) {
+            ngl_node_unrefp(&s->scene);
+            s->backend->destroy(s);
+            s->backend = NULL;
+            return ret;
+        }
+    }
+
+    return 0;
+}
+
+struct resize_params {
+    int width;
+    int height;
+    const int *viewport;
+};
+
+static int cmd_resize(struct ngl_ctx *s, void *arg)
+{
+    const struct resize_params *params = arg;
+    return s->backend->resize(s, params->width, params->height, params->viewport);
 }
 
 static int cmd_set_scene(struct ngl_ctx *s, void *arg)
@@ -212,23 +260,24 @@ static int cmd_make_current(struct ngl_ctx *s, void *arg)
 
 #define MAKE_CURRENT &(int[]){1}
 #define DONE_CURRENT &(int[]){0}
-static int reconfigure_ios(struct ngl_ctx *s, struct ngl_config *config)
+static int configure_ios(struct ngl_ctx *s, struct ngl_config *config)
+{
+    int ret = cmd_configure(s, config);
+    if (ret < 0)
+        return ret;
+    cmd_make_current(s, DONE_CURRENT);
+
+    return dispatch_cmd(s, cmd_make_current, MAKE_CURRENT);
+}
+
+static int resize_ios(struct ngl_ctx *s, const struct resize_params *params)
 {
     int ret = dispatch_cmd(s, cmd_make_current, DONE_CURRENT);
     if (ret < 0)
         return ret;
 
     cmd_make_current(s, MAKE_CURRENT);
-    ret = cmd_reconfigure(s, config);
-    cmd_make_current(s, DONE_CURRENT);
-
-    int ret_dispatch = dispatch_cmd(s, cmd_make_current, MAKE_CURRENT);
-    return ret ? ret : ret_dispatch;
-}
-
-static int configure_ios(struct ngl_ctx *s, struct ngl_config *config)
-{
-    int ret = cmd_configure(s, config);
+    ret = cmd_resize(s, params);
     if (ret < 0)
         return ret;
     cmd_make_current(s, DONE_CURRENT);
@@ -282,37 +331,6 @@ fail:
     return NULL;
 }
 
-#if defined(TARGET_IPHONE) || defined(TARGET_ANDROID)
-# define DEFAULT_BACKEND NGL_BACKEND_OPENGLES
-#else
-# define DEFAULT_BACKEND NGL_BACKEND_OPENGL
-#endif
-
-extern const struct backend ngli_backend_gl;
-extern const struct backend ngli_backend_gles;
-
-static const struct backend *backend_map[] = {
-    [NGL_BACKEND_OPENGL]   = &ngli_backend_gl,
-    [NGL_BACKEND_OPENGLES] = &ngli_backend_gles,
-};
-
-static int get_default_platform(void)
-{
-#if defined(TARGET_LINUX)
-    return NGL_PLATFORM_XLIB;
-#elif defined(TARGET_IPHONE)
-    return NGL_PLATFORM_IOS;
-#elif defined(TARGET_DARWIN)
-    return NGL_PLATFORM_MACOS;
-#elif defined(TARGET_ANDROID)
-    return NGL_PLATFORM_ANDROID;
-#elif defined(TARGET_MINGW_W64)
-    return NGL_PLATFORM_WINDOWS;
-#else
-    return NGL_ERROR_UNSUPPORTED;
-#endif
-}
-
 int ngl_configure(struct ngl_ctx *s, struct ngl_config *config)
 {
     if (!config) {
@@ -335,44 +353,42 @@ int ngl_configure(struct ngl_ctx *s, struct ngl_config *config)
         }
     }
 
-    if (s->configured)
-#if defined(TARGET_IPHONE) || defined(TARGET_DARWIN)
-        return reconfigure_ios(s, config);
-#else
-        return dispatch_cmd(s, cmd_reconfigure, config);
-#endif
-
-    if (config->backend == NGL_BACKEND_AUTO)
-        config->backend = DEFAULT_BACKEND;
-
-    if (config->backend < 0 ||
-        config->backend >= NGLI_ARRAY_NB(backend_map) ||
-        !backend_map[config->backend]) {
-        LOG(ERROR, "unknown backend %d", config->backend);
-        return NGL_ERROR_INVALID_ARG;
-    }
-
-    s->backend = backend_map[config->backend];
-    LOG(INFO, "selected backend: %s", s->backend->name);
-
-    if (config->platform == NGL_PLATFORM_AUTO)
-        config->platform = get_default_platform();
-    if (config->platform < 0) {
-        LOG(ERROR, "can not determine which platform to use");
-        return config->platform;
-    }
-
+    s->configured = 0;
 #if defined(TARGET_IPHONE) || defined(TARGET_DARWIN)
     int ret = configure_ios(s, config);
 #else
     int ret = dispatch_cmd(s, cmd_configure, config);
 #endif
-    if (ret < 0) {
+    if (ret < 0)
         return ret;
-    }
-
     s->configured = 1;
     return 0;
+}
+
+int ngl_resize(struct ngl_ctx *s, int width, int height, const int *viewport)
+{
+    if (!s->configured) {
+        LOG(ERROR, "context must be configured before resizing rendering buffers");
+        return NGL_ERROR_INVALID_USAGE;
+    }
+
+    const struct ngl_config *config = &s->config;
+    if (config->offscreen) {
+        LOG(ERROR, "offscreen context does not support resize operation");
+        return NGL_ERROR_INVALID_USAGE;
+    }
+
+    struct resize_params params = {
+        .width = width,
+        .height = height,
+        .viewport = viewport,
+    };
+
+#if defined(TARGET_IPHONE) || defined(TARGET_DARWIN)
+    return resize_ios(s, &params);
+#else
+    return dispatch_cmd(s, cmd_resize, &params);
+#endif
 }
 
 int ngl_set_scene(struct ngl_ctx *s, struct ngl_node *scene)
