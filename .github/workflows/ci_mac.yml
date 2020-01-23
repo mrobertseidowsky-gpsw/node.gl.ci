@@ -39,5 +39,5 @@ jobs:
 
     - name: Go into the virtualenv and run tests
       run: |
-        . /Users/runner/runners/2.162.0/work/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
+        . /Users/runner/runners/2.164.0/work/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
         make tests
