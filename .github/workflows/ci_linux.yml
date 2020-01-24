@@ -4,17 +4,9 @@ on:
   push:
     branches:    
       - 'master' # Push events on master branch
-      - 'cboesch' # Push events to branches matching refs/heads/cboesch
-      - 'mbouron' # Push events to branches matching refs/heads/mbouron
-      - 'releases/*' # Push events to branches matching refs/heads/releases/*
   pull_request: 
     branches:    
-      - 'master' # Pull request events on master branch
-      - 'cboesch' # Pull request events to branches matching refs/heads/cboesch
-      - 'mbouron' # Pull request events to branches matching refs/heads/mbouron
-      - 'releases/*' # Pull request events to branches matching refs/heads/releases/*
-  schedule:
-     - cron:  '0 0 * * *' # Every day at midnight
+      - 'master' # Pull request events on master branch 
    
 jobs:
   build_libs:
@@ -26,18 +18,17 @@ jobs:
     - uses: actions/checkout@v1
     - uses: docker://ubuntu:19.10
 
-    - name: Install ubuntu libs
+    - name: Install dependencies
       run: |
-        apt-get -y --force-yes update
-        apt-get -y install build-essential
-        apt-get -y install curl zlib1g-dev  nasm libx264-dev wget pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
-        apt-get -y install ffmpeg libavcodec-dev libavutil-dev libavformat-dev libavdevice-dev libavfilter-dev libswscale-dev libswresample-dev libpostproc-dev
+        apt -y --force-yes update
+        apt -y install build-essential
+        apt -y install curl libx264-dev pkg-config libglfw3-dev python-pip python2.7-dev python-virtualenv mlocate
+        apt -y install ffmpeg libavcodec-dev libavutil-dev libavformat-dev libavdevice-dev libavfilter-dev libswscale-dev libswresample-dev libpostproc-dev
    
     - name: Build node.gl
       run: |
-        make
+        make -jN
 
-    - name: Go into the virtualenv and run tests
+    - name: Run tests
       run: |
-        . /__w/node.gl.ci/node.gl.ci/nodegl-env/bin/activate
         make tests
