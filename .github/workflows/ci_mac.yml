@@ -27,7 +27,4 @@ jobs:
     - name: Build node.gl
       run: |
         make
-
-    - name: Run tests
-      run: |
-        make tests
+ 
