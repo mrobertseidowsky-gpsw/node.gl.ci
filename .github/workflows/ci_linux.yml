@@ -14,7 +14,13 @@ jobs:
     runs-on: ubuntu-18.04
     container: ubuntu:19.10
 
-    steps:
+   steps:
+    - name: Approve Pull Request
+      uses: juliangruber/approve-pull-request-action@v1
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        number: 1
+
     - uses: actions/checkout@v1
     - uses: docker://ubuntu:19.10
 
@@ -30,4 +36,4 @@ jobs:
         make -j$(nproc)
     - name: Run tests
       run: |
-        make tests
+        make -j$(nproc) test
