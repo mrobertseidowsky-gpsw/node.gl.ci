@@ -1,4 +1,4 @@
-name: 'Continuous Integration Pipeline'
+name: 'tests'
 
 on:
   push:
@@ -20,11 +20,11 @@ jobs:
       run: |
         brew update
         brew upgrade
-        brew install python2 curl wget pkg-config glfw3 ffmpeg
+        brew install python2 curl pkg-config glfw3 ffmpeg
         sudo easy_install pip
         sudo pip install virtualenv
    
     - name: Build node.gl
       run: |
-        make
+	make -j$(nproc)
  
