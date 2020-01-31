@@ -27,8 +27,6 @@ jobs:
    
     - name: Build node.gl
       run: |
-	echo "build"
-	echo $nproc
         make -j
     - name: Run tests
       run: |
