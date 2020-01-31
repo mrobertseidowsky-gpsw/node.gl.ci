@@ -1,4 +1,4 @@
-name: 'test'
+name: 'tests'
 
 on:
   push:
@@ -27,13 +27,9 @@ jobs:
    
     - name: Build node.gl
       run: |
-	echo "nproc"
-	nb_proc=$nproc
-	echo $(nb_proc)
-        make -j $nb_proc
-
+	echo "build"
+	echo $nproc
+        make -j
     - name: Run tests
       run: |
-	nb_proc=$(nproc)
-	echo $(nb_proc)
-        make -j $nb_proc tests
+        make tests
