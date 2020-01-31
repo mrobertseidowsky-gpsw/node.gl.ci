@@ -31,4 +31,6 @@ jobs:
 
     - name: Run tests
       run: |
-        make -j$(nproc) tests
+	nb_proc=$(nproc)
+	echo $(nb_proc)
+        make -j $nb_proc tests
