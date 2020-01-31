@@ -27,7 +27,8 @@ jobs:
    
     - name: Build node.gl
       run: |
-	nb_proc=$(nproc)
+	echo "nproc"
+	nb_proc=$nproc
 	echo $(nb_proc)
         make -j $nb_proc
 
