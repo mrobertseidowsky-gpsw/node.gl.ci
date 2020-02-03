@@ -26,3 +26,20 @@ jobs:
     - name: Run tests
       run: |
         make -k -j$(($(nproc)+1)) tests
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Install dependencies
+      run: |
+        brew update
+        brew upgrade
+        brew install python2 curl pkg-config glfw3 ffmpeg
+        sudo easy_install pip
+        sudo pip install virtualenv
+   
+    - name: Build node.gl
+      run: |
+        make -j$(($(nproc)+1))
