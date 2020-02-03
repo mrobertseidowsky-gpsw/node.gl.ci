@@ -24,6 +24,5 @@ jobs:
    
     - name: Build node.gl
       run: |
-	nproc
-        make -j$(($(nproc)+1))
+        make -j$(($(sysctl -n hw.logicalcpu)+1))
  
