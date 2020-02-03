@@ -18,7 +18,7 @@ jobs:
       run: |
         brew update
         brew upgrade
-        brew install python2
+        brew install python2 ffmpeg
         sudo easy_install pip
         sudo pip install virtualenv
    
