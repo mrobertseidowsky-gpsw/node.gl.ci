@@ -3,7 +3,7 @@ name: 'tests'
 # Trigger the workflow on push or pull request
 on: [push, pull_request]
 
-jobs:
+job:
   build_libs:
 
     runs-on: ubuntu-18.04
