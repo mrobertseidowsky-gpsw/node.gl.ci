@@ -1,13 +1,8 @@
-	name: 'tests'
+name: 'tests'
 
-on:
-  push:
-    branches:    
-      - 'master' # Push events on master branch
-  pull_request: 
-    branches:    
-      - 'master' # Pull request events on master branch
-   
+# Trigger the workflow on push or pull request
+on: [push, pull_request]
+ 
 jobs:
   build_libs:
 
