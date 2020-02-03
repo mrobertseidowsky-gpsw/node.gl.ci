@@ -27,7 +27,7 @@ jobs:
    
     - name: Build node.gl
       run: |
-        make -j $(($(nproc)+1))
+        make -j$(($(nproc)+1))
     - name: Run tests
       run: |
-        make -j $(($(nproc)+1)) tests
+        make -j$(($(nproc)+1)) tests
