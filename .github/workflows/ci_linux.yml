@@ -21,10 +21,8 @@ jobs:
         apt -y install ffmpeg libavcodec-dev libavutil-dev libavformat-dev libavdevice-dev libavfilter-dev libswscale-dev libswresample-dev libpostproc-dev
    
     - name: Build node.gl
-      uses: 13rac1/block-fixup-merge-action@v1.1.1
       run: |
         make -j$(($(nproc)+1))
     - name: Run tests
-      uses: 13rac1/block-fixup-merge-action@v1.1.1
       run: |
         make -k -j$(($(nproc)+1)) tests
