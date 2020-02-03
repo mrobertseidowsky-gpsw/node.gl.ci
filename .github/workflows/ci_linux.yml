@@ -27,6 +27,9 @@ jobs:
       run: |
         make -k -j$(($(nproc)+1)) tests
 
+jobs:
+  build_libs:
+
     runs-on: macos-latest
 
     steps:
