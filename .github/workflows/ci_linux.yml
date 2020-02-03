@@ -1,13 +1,8 @@
 name: 'tests'
 
-on:
-  push:
-    branches:    
-      - 'master' # Push events on master branch
-  pull_request: 
-    branches:    
-      - 'master' # Pull request events on master branch 
-   
+# Trigger the workflow on push or pull request
+on: [push, pull_request]
+
 jobs:
   build_libs:
 
@@ -19,6 +14,7 @@ jobs:
     - uses: docker://ubuntu:19.10
 
     - name: Install dependencies
+      uses: 13rac1/block-fixup-merge-action@v1.1.1
       run: |
         apt -y --force-yes update
         apt -y install build-essential
