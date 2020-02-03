@@ -2,8 +2,8 @@ name: 'tests Mac'
 
 on:
   push:
-    branches:    
-      - 'master' # Push events on master branch
+    branches:
+      - 'master'
   pull_request:
 
 jobs:
@@ -19,10 +19,8 @@ jobs:
         brew update
         brew upgrade
         brew install python2 pkg-config glfw3 ffmpeg
-        sudo easy_install pip
-        sudo pip install virtualenv
-   
-    - name: Build node.gl
+
+    - name: Build
       run: |
         make -j$(($(sysctl -n hw.logicalcpu)+1))
- 
+
