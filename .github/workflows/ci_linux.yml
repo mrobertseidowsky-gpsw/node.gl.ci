@@ -1,4 +1,4 @@
-name: 'tests'
+name: 'tests Linux'
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 
 jobs:
-  build_libs:
+  build_libs_linux:
 
     runs-on: ubuntu-18.04
     container: ubuntu:19.10
