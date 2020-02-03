@@ -18,11 +18,12 @@ jobs:
       run: |
         brew update
         brew upgrade
-        brew install python2 ffmpeg
+        brew install python2 pkg-config ffmpeg
         sudo easy_install pip
         sudo pip install virtualenv
    
     - name: Build node.gl
       run: |
+	nproc
         make -j$(($(nproc)+1))
  
