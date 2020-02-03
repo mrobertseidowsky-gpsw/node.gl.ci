@@ -19,6 +19,8 @@ jobs:
         brew update
         brew upgrade
         brew install python2 curl pkg-config glfw3 ffmpeg
+        sudo easy_install pip
+        sudo pip install virtualenv
 
     - name: Build
       run: |
