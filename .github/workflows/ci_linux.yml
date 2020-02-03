@@ -30,4 +30,4 @@ jobs:
         make -j$(($(nproc)+1))
     - name: Run tests
       run: |
-        make -j$(($(nproc)+1)) tests
+        make -k -j$(($(nproc)+1)) tests
