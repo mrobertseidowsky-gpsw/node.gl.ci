@@ -18,7 +18,7 @@ jobs:
       run: |
         brew update
         brew upgrade
-        brew install python2 pkg-config ffmpeg
+        brew install python2 pkg-config glfw3 ffmpeg
         sudo easy_install pip
         sudo pip install virtualenv
    
